@@ -120,7 +120,7 @@ class GraphInstance(DataInstance):
         return [ i for i in range(self.data.shape[0])]
 
     def neighbors(self, node):
-        return [i for i in self.data[node,:] if i != 0]
+        return [i for (i,ad) in enumerate(self.data[node,:]) if ad != 0]
     
     def degree(self,node):
         return len(self.neighbors(node))

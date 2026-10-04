@@ -1,6 +1,12 @@
 {
     "manipulators": [
+        { "class": "src.dataset.manipulators.padding.AdjacencyMatrixPadder", "parameters": {} }   ,
     { "class": "src.dataset.manipulators.centralities.NodeCentrality", "parameters": {} },
+<<<<<<<< HEAD:legacy/config-v2/snippets/datasets/centr_and_weights.json
     { "class": "src.dataset.manipulators.weights.EdgeWeights", "parameters": {} }       
+========
+    { "class": "src.dataset.manipulators.weights.EdgeWeights", "parameters": {} }
+        
+>>>>>>>> 1d6dc3639d20a5a97b8fef0f5c0905e256df86bd:lab/config/snippets/datasets/centr_and_weights.json
     ]    
 }

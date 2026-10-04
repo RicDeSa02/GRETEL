@@ -32,7 +32,6 @@ class GCN(nn.Module):
         # global pooling
         if isinstance(self.graph_convs[-1],nn.Identity):
             return self.graph_convs[-1](node_features)
-
         return self.graph_convs[-1](node_features, batch)
     
     def __init__conv_layers(self, use_weights):

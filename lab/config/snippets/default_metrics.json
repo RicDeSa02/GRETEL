@@ -1,0 +1,34 @@
+{"evaluation_metrics": [
+    {
+        "class": "src.legacy.evaluation.future.metrics.runtime.RuntimeMetric",
+        "parameters": {} 
+    },
+    {
+        "class": "src.legacy.evaluation.future.metrics.ged.GraphEditDistanceMetric",
+        "parameters": {} 
+    },
+    {
+        "class": "src.legacy.evaluation.future.metrics.correctness.CorrectnessMetric",
+        "parameters": {} 
+    },
+    {
+        "class": "src.legacy.evaluation.future.metrics.oracle_calls.OracleCallsMetric",
+        "parameters": {} 
+    },
+    {
+        "class": "src.legacy.evaluation.future.metrics.oracle_accuracy.OracleAccuracyMetric",
+        "parameters": {} 
+    },
+    {
+        "class": "src.legacy.evaluation.future.metrics.sparsity.SparsityMetric",
+        "parameters": {} 
+    },
+    {
+        "class": "src.legacy.evaluation.future.metrics.fidelity.FidelityMetric",
+        "parameters": {} 
+    },
+    {
+        "class": "src.legacy.evaluation.future.metrics.instability.InstabilityMetric",
+        "parameters": {} 
+    }
+]}

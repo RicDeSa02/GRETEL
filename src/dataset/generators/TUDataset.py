@@ -43,9 +43,7 @@ class TUDataset(Generator):
     
     def init(self):
         self.dataset_name = self.local_config['parameters']['alias']
-        base_path = self.prepare_data()
-        # read the dataset and process it
-        self.read_file = join(base_path, f'{self.dataset_name}.pkl')
+        self.prepare_data()
         self.generate_dataset()
 
     def generate_dataset(self):
@@ -82,10 +80,10 @@ class TUDataset(Generator):
                 continue
                 
             edge_features = None
-            try:
-                edge_features = instance.edge_weights.numpy()
-            except AttributeError:
-                self.context.logger.info(f'Instance id = {id} does not have edge features.')
+            if getattr(g, "edge_attr", None) is not None:
+                edge_features = g.edge_attr
+            elif getattr(g, "edge_weight", None) is not None:
+                edge_features = g.edge_weight
 
             # if self.dataset_name == "TRIANGLES": print("TRIANGLES dataset detected, adjusting labels by -1")
             label = instance.y.item()-1 if self.dataset_name == "TRIANGLES" else instance.y.item()
