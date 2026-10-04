@@ -35,6 +35,7 @@ class TUDataset(Generator):
                 return base_path
             else:
                 dataset = downloader(base_path, name=self.dataset_name, use_node_attr=True, use_edge_attr=True)
+                # dataset = TUDataset(base_path, name=self.dataset_name, use_node_attr=True, use_edge_attr=True)
                 torch.save(dataset, pkl_path)
                 self.context.logger.info(f"Saved dataset {self.dataset_name} in {pkl_path}.")
         return base_path        

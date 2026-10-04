@@ -51,8 +51,8 @@ class XPlore(Explainer):
         self.multi_label_classification = local_params['multi_label_classification'] # Whether target classification is multi-class
         self.dataset_classes = local_params['dataset_classes'] # Dataset classes/labels amount
         self.node_classification = local_params['node_classification'] # Whether to apply node classification
-        self.decay_α = local_params['decay_alpha'] # Wheter to decay learning rate (α) during explainer iterations
-        # print(f"self.decay_α: {self.decay_α}")
+        self.boost_α = local_params['boost_alpha'] # Wheter to decay learning rate (α) during explainer iterations
+        # print(f"self.boost_α: {self.boost_α}")
         # print(f"learning rate: {self.α}")
         self.directed = local_params['directed'] # Wheter the graph is directed or undirected
         self.device = local_params['device']
@@ -150,8 +150,8 @@ class XPlore(Explainer):
         if 'node_classification' not in local_config['parameters']:
             local_config['parameters']['node_classification'] = False        
 
-        if 'decay_alpha' not in local_config['parameters']:
-            local_config['parameters']['decay_alpha'] = False
+        if 'boost_alpha' not in local_config['parameters']:
+            local_config['parameters']['boost_alpha'] = False
 
         if 'directed' not in local_config['parameters']:
             local_config['parameters']['directed'] = False
@@ -499,9 +499,9 @@ class XPlore(Explainer):
             if self.debugging and self.visualize: print(f"Iteration {self.k} finished | Press Enter to continue")
             elif self.debugging: input(f"Iteration {self.k} finished | Press Enter to continue")
 
-            if (self.k+1) % self.lr_reduction_epoch == 0 and self.decay_α:
+            if (self.k+1) % self.lr_reduction_epoch == 0 and self.boost_α:
                 if (self.A_v_bar.data.numpy() == instance.data).all():
-                    self.α *= 1.05
+                    self.α *= 1.15
                 else:
                     self.α *= 1e0
                 # if self.α > 1e1*8: self.α = 1e1*8
@@ -864,10 +864,18 @@ class XPlore(Explainer):
             num_nodes = graph.number_of_nodes()
             features_to_stack = []
 
-            if any(dataset in self.dataset.name for dataset in self.CHEMICAL_DATASETS):
-                atom_onehot = instance.node_features[:, :instance.n_atom_types]
-                features_to_stack.insert(0, atom_onehot)  # prepend, before causality
-                # print(f"atom_onehot: {atom_onehot}")
+            # copy original dataset features
+            n_extra = 0
+            if 'Causality' in self.manipulators: n_extra += 1
+            if 'NodeCentrality' in self.manipulators: n_extra += 7
+
+            base_features = (instance.node_features[:, :-n_extra] if n_extra > 0 else instance.node_features)
+            features_to_stack.append(base_features)
+
+            # if any(dataset in self.dataset.name for dataset in self.CHEMICAL_DATASETS):
+            #     atom_onehot = instance.node_features[:, :instance.n_atom_types]
+            #     features_to_stack.insert(0, atom_onehot)  # prepend, before causality
+            #     # print(f"atom_onehot: {atom_onehot}")
 
             # Compute Centrality features as lists in node order
             if self.manipulators != [] and 'NodeCentrality' in self.manipulators:
@@ -882,9 +890,8 @@ class XPlore(Explainer):
                 except: laplacian = [0.0] * num_nodes
                 centralities = np.stack([degree, betweenness, closeness, harmonic, clustering, katz, laplacian], axis=1)
                 # node_features = np.stack([degree, betweenness, closeness, harmonic, clustering, katz, laplacian], axis=1) # Stack into a (num_nodes, num_features) array
-
-                            
-            # compute Causality features
+                
+             # compute Causality features
             if self.manipulators != [] and 'Causality' in self.manipulators:
                 causality_manip = next((m for m in self.dataset.manipulators if type(m).__name__ == 'Causality'), None)
                 # input(causality_manip)
@@ -971,6 +978,7 @@ class XPlore(Explainer):
             # self.g_v_logits = self.oracle.model(self.N_v_bar, self.edge_index_full, self.edge_weights_full, self.batch).squeeze()
             # print(f"self.g_v_logits: {self.g_v_logits}")
             # print(f"self.N_v_bar.shape, self.edge_index.shape, self.edge_weights.shape: {self.N_v_bar.shape, self.edge_index.shape, self.edge_weights.shape}")
+            # print(self.k, self.N_v_bar.shape)
             self.g_v_logits = self.oracle.model(self.N_v_bar, self.edge_index, self.edge_weights, self.batch).squeeze()
             # print(f"self.g_v_logits: {self.g_v_logits}")
             # input("logits computed")

@@ -14,6 +14,7 @@ class DownstreamGCN(GCN):
                  linear_decay=2,
                  pooling=MeanAggregation(),
                  use_weights=True):
+
         
         super().__init__(node_features, num_conv_layers, conv_booster, pooling, use_weights)
         

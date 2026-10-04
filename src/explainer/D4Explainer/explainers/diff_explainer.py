@@ -533,6 +533,8 @@ class DiffExplainer(ExplainerD4, Trainable, Explainer):
         # print(type(graph.x[0]), type(full_edge_index))
         # print(graph.x)
         graph.x = torch.from_numpy(np.array(graph.x)).double()
+        if graph.x.dim() == 3 and graph.x.size(0) == 1:
+            graph.x = graph.x.squeeze(0)
         if args.task == "nc":
             output_prob_cont = self.model.forward(
                 node_features=graph.x.to(args.device), edge_index=full_edge_index.to(args.device), edge_weight=edge_mask_full.to(args.device)
@@ -620,7 +622,7 @@ class DiffExplainer(ExplainerD4, Trainable, Explainer):
         self.local_config['parameters']['normalization'] = self.local_config['parameters'].get('normalization', 'instance')
         self.local_config['parameters']['num_layers'] = self.local_config['parameters'].get('num_layers', 6)
         self.local_config['parameters']['layers_per_conv'] = self.local_config['parameters'].get('layers_per_conv', 1)
-        self.local_config['parameters']['n_hidden'] =  self.local_config['parameters'].get('n_hidden', 128)
+        self.local_config['parameters']['n_hidden'] =  self.local_config['parameters'].get('n_hidden', 64)
         self.local_config['parameters']['cat_output'] = self.local_config['parameters'].get('cat_output', True)
         self.local_config['parameters']['residual'] = self.local_config['parameters'].get('residual', False)
         self.local_config['parameters']['noise_mlp'] = self.local_config['parameters'].get('noise_mlp', True)

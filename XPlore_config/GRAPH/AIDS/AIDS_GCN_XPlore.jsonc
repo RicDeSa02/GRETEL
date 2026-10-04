@@ -1,6 +1,6 @@
 {  
     "experiment": {
-        "scope": "GRAPH/AIDS/XPlore*",
+        "scope": "GRAPH/AIDS/XPlore++++",
         "parameters": {
             "lock_release_tout":120,
             "propagate":[
@@ -29,11 +29,12 @@
             }
         },
         "oracle": {
-            "class": "src.oracle.nn.torch.OracleTorch",
+            "class": "src.oracle.nn.torch_full.OracleTorch",
             "parameters": {
                 "epochs": 50,
                 "batch_size": 32,
                 "early_stopping_threshold":1e-4,
+                "device": "cpu",
                 "optimizer": {
                     "class": "torch.optim.RMSprop",
                     "parameters": {
@@ -48,7 +49,7 @@
                 },
                 "model": {
                     "class": "src.oracle.nn.gcn.DownstreamGCN",
-                    "parameters": {"num_conv_layers":3,"num_dense_layers":1,"conv_booster":2,"linear_decay":1.8}
+                    "parameters": {"num_conv_layers":3,"num_dense_layers":1,"conv_booster":2,"linear_decay":1.8, "use_weights": true}
                 }
             }   
         }
@@ -58,14 +59,15 @@
             "class": "src.explainer.XPlore.XPlore",
             "parameters": {
                 "learning_rate": 1e0,
-                "K": 500,
+                "K": 1000,
                 "beta": 0.5,
                 "extended": true,
                 "gamma_edge": 0,
                 "update_node_feat": false,
                 "change_node_feat": false,
                 "gamma_node_feat": 0, 
-                "visualize": false
+                "visualize": false,
+                "boost_alpha": true
             }
         }
      ],

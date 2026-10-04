@@ -12,10 +12,11 @@ class DownstreamGCN(GCN_Multiclass):
                  num_dense_layers=2,
                  conv_booster=2,
                  linear_decay=2,
-                 pooling=MeanAggregation()):
+                 pooling=MeanAggregation(),
+                 use_weights=True):
         
         # input(n_classes)
-        super().__init__(node_features, num_conv_layers, conv_booster, pooling)
+        super().__init__(node_features, num_conv_layers, conv_booster, pooling, use_weights)
         
         self.num_dense_layers = num_dense_layers
         self.linear_decay = linear_decay

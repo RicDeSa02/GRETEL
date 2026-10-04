@@ -1,0 +1,3 @@
+{"evaluation_metrics": [ 
+    {"name": "embed_dataset", "parameters": {"id":-1, "stop_after_n_found":-1, "classes_to_explain":[0,1]}}
+]}

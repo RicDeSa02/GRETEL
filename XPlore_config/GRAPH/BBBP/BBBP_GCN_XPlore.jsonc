@@ -1,6 +1,6 @@
 {  
     "experiment" : {
-        "scope": "GRAPH/BBBP/XPlore*",
+        "scope": "GRAPH/BBBP/XPlore+++",
         "parameters" : {
             "lock_release_tout":120,
             "propagate":[
@@ -18,10 +18,11 @@
                 "compose_gcn": "config/snippets/datasets/BBBP.json"
             },
             "oracle": {
-                "class": "src.oracle.nn.torch.OracleTorch",
+                "class": "src.oracle.nn.torch_full.OracleTorch",
                 "parameters": {
                     "epochs": 1000,
                     "batch_size": 64,
+                    "device": "cpu",
                     "optimizer": {
                         "class": "torch.optim.RMSprop",
                         "parameters": {
@@ -41,7 +42,8 @@
                             "num_conv_layers": 5,
                             "num_dense_layers": 3,
                             "conv_booster": 2,
-                            "linear_decay": 1.8
+                            "linear_decay": 1.8,
+                            "use_weights": true
                         }
                     }
                 }
@@ -52,14 +54,15 @@
       "class": "src.explainer.XPlore.XPlore",
       "parameters": {
         "alpha": 1e0, 
-        "K": 500, 
+        "K": 1000, 
         "beta": 0.5, 
         "extended": true, 
         "gamma_edge": 0,
         "update_node_feat": false,
         "change_node_feat": false, 
         "gamma_node_feat": 0, 
-        "visualize": false}}],
+        "visualize": false,
+        "boost_alpha": true}}],
     "embedders": [
       {"class": "src.embedder.karateclub.FeatherGraph.FeatherGraphEmbedder", "parameters":{        }},
       {"class": "src.embedder.karateclub.Graph2Vec.Graph2VecEmbedder", "parameters":{        }},

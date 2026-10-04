@@ -1,0 +1,10 @@
+// Tree-Grid Dataset
+{
+    "class": "src.dataset.dataset_base.Dataset",
+    "parameters": {
+        "generator": {
+            "class": "src.dataset.generators.treegrid_dgl.TreeGrid",
+            "parameters": { "num_instances": 25, "tree_height": 5, "num_motifs": 1, "grid_size": 3, "perturb_ratio": 0.1 }
+        }
+    } 
+}

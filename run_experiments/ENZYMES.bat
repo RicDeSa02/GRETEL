@@ -7,6 +7,6 @@ python main.py XPlore_config\GRAPH\ENZYMES\ENZYMES_GCN_CLEAR.jsonc
 python main.py XPlore_config\GRAPH\ENZYMES\ENZYMES_GCN_D4Explainer.jsonc
 python main.py XPlore_config\GRAPH\ENZYMES\ENZYMES_GCN_iRand.jsonc
 python main.py XPlore_config\GRAPH\ENZYMES\ENZYMES_GCN_RSGG-CE.jsonc
-python main.py XPlore_config\GRAPH\ENZYMES\ENZYMES_GCN_XPlore.jsonc
-python main.py XPlore_config\GRAPH\ENZYMES\ENZYMES_GCN_XPlore+.jsonc
-python main.py XPlore_config\GRAPH\ENZYMES\ENZYMES_GCN_XPlore++.jsonc
+@REM python main.py XPlore_config\GRAPH\ENZYMES\ENZYMES_GCN_XPlore.jsonc
+@REM python main.py XPlore_config\GRAPH\ENZYMES\ENZYMES_GCN_XPlore+.jsonc
+@REM python main.py XPlore_config\GRAPH\ENZYMES\ENZYMES_GCN_XPlore++.jsonc

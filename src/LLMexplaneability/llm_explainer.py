@@ -1,0 +1,227 @@
+from google import genai
+# import ollama
+import os
+import time
+import random as rd
+from src.core.llm_base import LLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+import torch
+
+from src.utils.logger import GLogger
+
+
+class GeminiExplainer(LLM):
+
+    def init(self):
+        # Credentials come from the environment, never from source. Export
+        # GEMINI_API_KEYS (comma-separated, rotated on error) or a single
+        # GEMINI_API_KEY / GOOGLE_API_KEY before running an LLM pipeline.
+        raw = (os.environ.get("GEMINI_API_KEYS")
+               or os.environ.get("GEMINI_API_KEY")
+               or os.environ.get("GOOGLE_API_KEY")
+               or "")
+        self.apis = [k.strip() for k in raw.split(",") if k.strip()]
+        if not self.apis:
+            raise SystemExit(
+                "GeminiExplainer needs an API key: export GEMINI_API_KEY "
+                "(or GOOGLE_API_KEY), or GEMINI_API_KEYS with a "
+                "comma-separated list, before running the LLM pipeline."
+            )
+        self.index = 0
+        self.api_key = self.apis[self.index]
+        self.model = "gemini-2.5-flash"
+        self.client = genai.Client(api_key = self.api_key)
+
+
+    def explain_counterfactual(self, system, prompt):
+
+        num_tries = 0
+        while num_tries < 30:
+            try:
+                resp = self.client.models.generate_content(
+                    model=self.model,
+                    contents= system+prompt
+                )
+                
+                return resp.text
+            except Exception as e:
+                num_tries += 1
+                # Rotate to the next key: a long run usually fails because one
+                # key hit its quota, not because the request was bad.
+                if len(self.apis) > 1:
+                    self.index = (self.index + 1) % len(self.apis)
+                    self.api_key = self.apis[self.index]
+                    self.client = genai.Client(api_key=self.api_key)
+                    GLogger.getLogger().info(
+                        f"Gemini call failed ({type(e).__name__}); "
+                        f"rotating to API key {self.index + 1}/{len(self.apis)}")
+                else:
+                    GLogger.getLogger().info(
+                        f"Gemini call failed ({type(e).__name__}); retrying")
+                time.sleep(60) # wait for 60 seconds before retrying
+                
+        raise Exception("Failed to get response from the model after multiple attempts.")
+    
+
+class LocalLlamaExplainer(LLM):
+
+    def init(self):
+        # self.repo_id = "meta-llama/Meta-Llama-3.1-8B-Instruct" "Qwen/Qwen2.5-7B-Instruct" "Qwen/Qwen2.5-72B-Instruct"
+        self.repo_id = "meta-llama/Llama-3.1-8B-Instruct"
+
+
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.bfloat16,   # or torch.float16
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4",               # good default
+        )
+
+
+        self.tokenizer = AutoTokenizer.from_pretrained(self.repo_id)
+
+        # Chat template (fine)
+        self.tokenizer.chat_template = """{% for message in messages %}
+{% if message['role'] == 'system' %}
+<|im_start|>system
+{{ message['content'] }}<|im_end|>
+{% elif message['role'] == 'user' %}
+<|im_start|>user
+{{ message['content'] }}<|im_end|>
+{% elif message['role'] == 'assistant' %}
+<|im_start|>assistant
+{{ message['content'] }}<|im_end|>
+{% endif %}
+{% endfor %}
+<|im_start|>assistant
+"""
+
+        # ---- MODEL LOADING / DEVICE HANDLING ----
+        # Drop device_map="auto" and use a single explicit device
+        self.device = (
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
+
+        torch_dtype = torch.bfloat16 if self.device == "cuda" else torch.float32
+
+        GLogger.getLogger().info("torch dtype = " + str(torch_dtype))
+
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.repo_id,
+            torch_dtype=torch_dtype,
+            trust_remote_code=True,
+            quantization_config=bnb_config,
+        ).to(self.device)
+
+        if self.device == "mps":
+            # MPS does not like bfloat16/float16
+            self.model = self.model.to(torch.float32)
+
+        # Ensure pad token is set (Llama often has pad = eos)
+        if self.tokenizer.pad_token_id is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+
+        GLogger.getLogger().info('LLM - Model ' + self.repo_id + ' Loaded')
+
+
+    def explain_counterfactual(self, system, prompt):
+        self.model.eval()
+
+        messages = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ]
+
+        # 1) Build chat text via template (string, not tokens yet)
+        chat_text = self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
+        # 2) Tokenize normally to get input_ids + attention_mask
+        inputs = self.tokenizer(
+            chat_text,
+            return_tensors="pt",
+        )
+
+        # 3) Move EVERYTHING to the same device as the model
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+        num_tries = 0
+        while num_tries < 30:
+            try:
+                with torch.no_grad():
+                    outputs = self.model.generate(
+                        **inputs,                      # input_ids + attention_mask
+                        max_new_tokens=1024,
+                        pad_token_id=self.tokenizer.pad_token_id,
+                        temperature=0.7,
+                        do_sample=True,
+                        top_p=0.9,
+                        repetition_penalty=1.2,
+                    )
+
+                # 1) Longitud del prompt (input)
+                input_length = inputs["input_ids"].shape[1]
+
+                # 2) Nos quedamos solo con los tokens generados
+                generated_tokens = outputs[0][input_length:]
+
+                # 3) Decodificamos SOLO la respuesta del assistant
+                resp = self.tokenizer.decode(
+                    generated_tokens,
+                    skip_special_tokens=True,
+                ).strip()
+
+                # Optional: free GPU memory if you're looping a lot
+                # del inputs, outputs
+                if self.device == "cuda":
+                    torch.cuda.empty_cache()
+
+                return resp
+
+            except Exception as e:
+                num_tries += 1
+                if self.device.startswith("cuda"):
+                    import gc
+                    gc.collect()
+                    torch.cuda.empty_cache()
+                GLogger.getLogger().info(e)
+
+        raise Exception("Failed to get response from the model after multiple attempts.")
+
+
+# class OllamaExplainer(LLMExplainer):
+
+#     def __init__(self):
+#         api_key= None
+#         model = "llama3"
+#         super().__init__(api_key, model)
+
+#     def explain_counterfactual(self, prompt):
+
+#         seconds = rd.randint(1, 20)
+#         # time.sleep(seconds) # wait for 60 seconds before retrying
+#         client = ollama.Client()
+
+
+#         num_tries = 0
+#         # while num_tries < 30:
+#         try:
+#             resp = client.generate(
+#                 model=self.model,
+#                 prompt=prompt,
+#                 stream=False # Configuramos stream en False para obtener la respuesta completa de una vez
+#             )
+            
+#             return resp.response
+#         except Exception as e:
+#             num_tries += 1
+#             # time.sleep(60) # wait for 60 seconds before retrying
+            
+#         # raise Exception("Failed to get response from the model after multiple attempts.")

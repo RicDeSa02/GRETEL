@@ -158,7 +158,7 @@ class CLEARExplainer(Trainable, Explainer):
                         G.nodes[i]["Feature"] = feat.mean()
 
                     nx.write_gexf(G, f"CFs_figs\\{instance.id}-CLEAR-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
-                    input(f"Graph saved to CFs_figs\{instance.id}-CLEAR-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
+                    input(f"Graph saved to CFs_figs\\{instance.id}-CLEAR-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
 
             if cf_instance and self.chem_flag:
                 ATOM_MAPS = {
@@ -252,7 +252,7 @@ class CLEARExplainer(Trainable, Explainer):
                     if input("save graph? (y/n): ").lower() == "y":
                         plot_molecule(mol, filepath=f"CFs_figs\\{self.dataset.name}\\{instance.id}-CLEAR-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.pdf", ref_mol=mol_original)
                         nx.write_gexf(G, f"CFs_figs\\{self.dataset.name}\\{instance.id}-CLEAR-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
-                        input(f"Graph saved to CFs_figs\{self.dataset.name}\{instance.id}-CLEAR-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
+                        input(f"Graph saved to CFs_figs\\{self.dataset.name}\\{instance.id}-CLEAR-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
 
             return cf_instance
 
@@ -345,9 +345,9 @@ class CLEARExplainer(Trainable, Explainer):
         # adj_permuted /= torch.max(adj_permuted)
         adj_permuted /= (adj_permuted.max(dim=-1, keepdim=True)[0].clamp(min=1e-8))
         adj_permuted = adj_permuted.clamp(0, 1)
-        print("adj min/max:", adj_reconst.min().item(), adj_reconst.max().item())
-        print("features finite:", torch.isfinite(features_reconst).all().item())
-        print("adj finite:", torch.isfinite(adj_reconst).all().item())
+        # print("adj min/max:", adj_reconst.min().item(), adj_reconst.max().item())
+        # print("features finite:", torch.isfinite(features_reconst).all().item())
+        # print("adj finite:", torch.isfinite(adj_reconst).all().item())
         dist_a = self.__distance_graph_prob(adj_permuted, adj_reconst)
                 
         loss_sim = self.beta_x * dist_x + self.beta_adj * dist_a
@@ -500,7 +500,7 @@ class CLEAR(nn.Module):
             nn.Dropout(self.dropout),
             nn.ReLU(),
             nn.Linear(self.h_dim, self.n_nodes * self.n_nodes),
-            # nn.Sigmoid()
+            nn.Sigmoid()
         )
         self.graph_norm = nn.BatchNorm1d(self.h_dim)
         

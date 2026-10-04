@@ -1,0 +1,10 @@
+{"evaluation_metrics": [ 
+    {"name": "correctness_full", "parameters": {}},
+    {"name": "fidelity_full", "parameters": {}},
+    {"name": "oracle_accuracy_full", "parameters": {}},
+    {"name": "runtime", "parameters": {}},
+    {"name": "graph_edit_distance", "parameters": {}},
+    {"name": "oracle_calls", "parameters": {}},
+    {"name": "sparsity", "parameters": {}},
+    {"name": "cosine_similarity", "parameters": {}}
+]}

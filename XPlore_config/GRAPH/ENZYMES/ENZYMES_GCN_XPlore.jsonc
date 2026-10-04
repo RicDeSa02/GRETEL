@@ -1,6 +1,6 @@
 {  
     "experiment": {
-        "scope": "GRAPH/ENZYMES/XPlore*",
+        "scope": "GRAPH/ENZYMES/XPlore+++",
         "parameters": {
             "lock_release_tout":120,
             "propagate":[
@@ -28,11 +28,12 @@
             }
         },
         "oracle": {
-            "class": "src.oracle.nn.torch.OracleTorch",
+            "class": "src.oracle.nn.torch_full.OracleTorch",
             "parameters": {
                 "epochs":1000,
                 "batch_size": 64,
                 "early_stopping_threshold":1e-4,
+                "device": "cpu",
                 "optimizer": {
                     "class": "torch.optim.RMSprop",
                     "parameters": {
@@ -47,7 +48,7 @@
                 },
                 "model": {
                     "class": "src.oracle.nn.gcn_multiclass.DownstreamGCN",
-                    "parameters": {"num_conv_layers":3,"num_dense_layers":1,"conv_booster":2,"linear_decay":1.8}
+                    "parameters": {"num_conv_layers":3,"num_dense_layers":1,"conv_booster":2,"linear_decay":1.8, "use_weights": true}
                 }
             }   
         }
@@ -56,7 +57,7 @@
       "class": "src.explainer.XPlore.XPlore",
       "parameters": {
         "alpha": 1e0, 
-        "K": 500, 
+        "K": 1000, 
         "beta": 0.5, 
         "extended": true, 
         "gamma_edge": 0,
@@ -65,7 +66,8 @@
         "gamma_node_feat": 0,
         "multi_label_classification": true,
         "dataset_classes": 6,
-        "visualize": false}}],
+        "visualize": false,
+        "boost_alpha": true}}],
     "compose_mes" : "config/snippets/default_metrics.json",
     "compose_strs" : "config/snippets/default_store_paths.json",
     "embedders": [
