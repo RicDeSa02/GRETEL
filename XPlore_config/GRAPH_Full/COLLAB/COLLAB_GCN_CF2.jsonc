@@ -1,6 +1,6 @@
 {  
     "experiment": {
-        "scope": "GRAPH/COLLAB/COMBINEX",
+        "scope": "GRAPH/COLLAB/CF2",
         "parameters": {
             "lock_release_tout":120,
             "propagate":[
@@ -53,7 +53,9 @@
             }   
         }
     } ],
-    "explainers": [{"class": "src.explainer.learned.combinex.COMBINEX","parameters":{}}],
+    "explainers": [ 
+        {"class": "src.explainer.generative.cf2.CF2Explainer","parameters":{"epochs": 20, "batch_size_ratio": 0.2, "lr" : 0.02, "alpha" : 0.7, "lam" : 20, "gamma" : 0.9}}
+    ],
     "compose_mes" : "config/snippets/metrics_fully_connected.json",
     "compose_strs" : "config/snippets/default_store_paths.json",
     "embedders": [

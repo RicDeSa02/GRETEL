@@ -1,6 +1,7 @@
 :: run_experiments\BBBP.bat
 :: python main.py
 
+python main.py XPlore_config\GRAPH_Full\BBBP\BBBP_GCN_C2Explainer.jsonc
 python main.py XPlore_config\GRAPH_Full\BBBP\BBBP_GCN_CF-GNNE.jsonc
 python main.py XPlore_config\GRAPH_Full\BBBP\BBBP_GCN_CF2.jsonc
 python main.py XPlore_config\GRAPH_Full\BBBP\BBBP_GCN_CLEAR.jsonc

@@ -21,7 +21,7 @@
             }
         },
         "oracle": {
-            "class": "src.oracle.nn.torch.OracleTorch",
+            "class": "",
             "parameters": {
                 "epochs": 20,
                 "batch_size": 32,

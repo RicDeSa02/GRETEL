@@ -54,16 +54,15 @@
         }
     } ],
     "explainers": [ 
-        {"class": "src.explainer.generative.cf2.CF2Explainer",
+        {"class": "src.explainer.generative.clear.CLEARExplainer",
         "parameters":{
-            "epochs": 20,
-            "batch_size_ratio": 0.2,
-            "lr" : 0.02,
-            "alpha" : 0.7,
-            "lam" : 20,
-            "gamma" : 0.9}
+            "epochs": 10,
+            "lr": 0.01,
+            "lambda_cfe": 0.1,
+            "alpha": 0.4,
+            "batch_size": 32 }
         }
-    ],
+     ],
     "compose_mes" : "config/snippets/metrics_fully_connected.json",
     "compose_strs" : "config/snippets/default_store_paths.json",
     "embedders": [
