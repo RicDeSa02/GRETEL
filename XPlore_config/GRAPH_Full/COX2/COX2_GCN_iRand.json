@@ -28,11 +28,12 @@
             }
         },
         "oracle": {
-            "class": "src.oracle.nn.torch.OracleTorch",
+            "class": "src.oracle.nn.torch_full.OracleTorch",
             "parameters": {
                 "epochs": 500,
                 "batch_size": 32,
                 "early_stopping_threshold":1e-4,
+                "device": "cpu",
                 "optimizer": {
                     "class": "torch.optim.RMSprop",
                     "parameters": {
@@ -47,13 +48,13 @@
                 },
                 "model": {
                     "class": "src.oracle.nn.gcn.DownstreamGCN",
-                    "parameters": {"num_conv_layers":2,"num_dense_layers":2,"conv_booster":2.5,"linear_decay":1.8}
+                    "parameters": {"num_conv_layers":2,"num_dense_layers":2,"conv_booster":2.5,"linear_decay":1.8, "use_weights": true}
                 }
             }   
         }
     } ],
     "explainers" : [{"class": "src.explainer.search.i_rand.IRandExplainer", "parameters": {"p": 0.01, "t": 3}}],
-    "compose_mes" : "config/snippets/default_metrics.json",
+    "compose_mes" : "config/snippets/metrics_fully_connected.json",
     "compose_strs" : "config/snippets/default_store_paths.json",
     "embedders": [
       {"class": "src.embedder.karateclub.FeatherGraph.FeatherGraphEmbedder", "parameters":{        }},

@@ -10,7 +10,44 @@
             ]
         }
     },
-    "do-pairs":[{"compose_tcr_gcn" : "config/snippets/do-pairs/TCR-5000-28-0.3_GCN.json"} ],
+    // "do-pairs":[{"compose_tcr_gcn" : "config/snippets/do-pairs/TCR-5000-28-0.3_GCN.json"} ],
+    "do-pairs": [
+        {
+            "dataset" : {
+                "class": "src.dataset.dataset_base.Dataset",
+                "parameters": {
+                    "generator": {
+                        "class": "src.dataset.generators.treecycles_rand.TreeCyclesRand", 
+                        "parameters": { "num_instances": 5000, "num_nodes_per_instance": 28, "ratio_nodes_in_cycles": 0.3 }
+                    }
+                } 
+            },
+            "oracle": {
+                "class": "src.oracle.nn.torch_full.OracleTorch",
+                "parameters": {
+                    "epochs": 100,
+                    "batch_size": 32,
+                    "device": "cpu",
+                    "optimizer": {
+                        "class": "torch.optim.RMSprop",
+                        "parameters": {
+                            "lr":0.01                
+                        }
+                        },
+                    "loss_fn": {
+                        "class": "torch.nn.CrossEntropyLoss",
+                        "parameters": {     
+                            "reduction":"mean"
+                        }
+                        },
+                    "model": { 
+                        "class": "src.oracle.nn.gcn.DownstreamGCN",
+                        "parameters": {"num_conv_layers":3,"num_dense_layers":1,"conv_booster":2,"linear_decay":1.8, "use_weights": true}
+                    } 
+                }   
+            }
+        }
+    ],
     "explainers": [{
         "class": "src.explainer.generative.rsgg.RSGG",
         "parameters": {

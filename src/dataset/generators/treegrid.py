@@ -13,12 +13,15 @@ class TreeGrid(Generator):
         self.num_instances = self.local_config['parameters'].get('num_instances', 1000)
         self.tree_height = self.local_config['parameters'].get('tree_height', 5)
         self.grid_size = self.local_config['parameters'].get('grid_size', (3, 3))
-
-        assert ((isinstance(self.num_instances, float) or isinstance(self.num_instances, int)) and self.num_instances >= 1)
-        assert ((isinstance(self.tree_height, float) or isinstance(self.tree_height, int)) and self.tree_height >= 1)
-        assert ((isinstance(self.grid_size, float) or isinstance(self.grid_size, int)) and self.grid_size >= 1 or isinstance(self.grid_size, tuple))      
+        self.seed = self.local_config['parameters'].get('seed', 0)
+        self.rng = np.random.default_rng(self.seed)
 
         self.grid_size = (self.grid_size, self.grid_size) if isinstance(self.grid_size, int) else self.grid_size # Create a 2D grid if given a 1D value
+
+        assert ((isinstance(self.num_instances, int)) and self.num_instances >= 1)
+        assert ((isinstance(self.tree_height, float) or isinstance(self.tree_height, int)) and self.tree_height >= 1)
+        assert ((isinstance(self.grid_size, float) or isinstance(self.grid_size, int)) and self.grid_size >= 1 or isinstance(self.grid_size, tuple))
+        assert ((2**(self.tree_height + 1) - 1) > self.grid_size[0]*self.grid_size[1])
 
         self.generate_dataset()
 
@@ -39,8 +42,9 @@ class TreeGrid(Generator):
 
         for i in range(self.num_instances):
             # Randomly determine if the graph is going to contain a TreeGrid or just a tree
-            has_treegrid = np.random.randint(0, 2)  # 2 excluded
-            num_nodes = 2**self.tree_height  # Number of nodes in the tree
+            has_treegrid = self.rng.integers(0, 2)  # 2 excluded
+            graph_seed = int(self.rng.integers(0, 2**32 - 1))
+            num_nodes = 2**(self.tree_height + 1) - 1  # Number of nodes in the tree
             
             if has_treegrid: # Generate grid and tree
 
@@ -52,7 +56,7 @@ class TreeGrid(Generator):
 
                 # Generate tree
                 tree_nodes = num_nodes - len(grid.nodes)  # Ensure tree has enough nodes to attach to grid
-                tree = nx.random_tree(n=tree_nodes)
+                tree = nx.random_tree(n=tree_nodes, seed=graph_seed)
                 nx.set_node_attributes(tree, 0, 'grid')  # Mark tree nodes
                 
                 # Combine grid and tree
@@ -70,7 +74,7 @@ class TreeGrid(Generator):
                 draw_graph = combined
             
             else: # Generate a random tree
-                tree = nx.random_tree(n=num_nodes)
+                tree = nx.random_tree(n=num_nodes, seed=graph_seed)
                 adj_matrix = nx.to_numpy_array(tree)
                 label = 0  # Graph is a random tree
                 features = np.ones(num_nodes)
@@ -87,11 +91,13 @@ class TreeGrid(Generator):
             edges_count += graph.number_of_edges()
             # Append the instance to the dataset
             self.dataset.instances.append(GraphInstance(id=i, data=adj_matrix, label=label, node_features=features))
-            self.context.logger.info(f"Generated instance with id {i} and label={label}")    
+            # self.context.logger.info(f"Generated instance with id {i} and label={label}")    
     
         nodes_avg = nodes_count / self.num_instances
         edges_avg = edges_count / self.num_instances
-        print("Nodes avg:", nodes_avg, "Edges avg:", edges_avg)
+        # print("Nodes avg:", nodes_avg, "Edges avg:", edges_avg)
+        self.context.logger.info(f"Generated dataset - instances: {self.num_instances} - tree height: {self.tree_height} - grid size: {self.grid_size} - Nodes avg: {nodes_avg:.2f} - Edges avg: {edges_avg:.2f}")    
+
 
     def get_num_instances(self):
         return len(self.dataset.instances)

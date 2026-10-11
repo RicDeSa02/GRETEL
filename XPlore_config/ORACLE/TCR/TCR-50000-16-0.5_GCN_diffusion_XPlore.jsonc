@@ -50,7 +50,7 @@
             }
         }
     ],
-    "explainers": [{"class": "src.explainer.XPlore.XPlore",
+    "explainers": [{"class": "src.explainer.perturbation.XPlore.XPlore",
     "parameters": {
         "alpha": 1e1, 
         "K": 100, 

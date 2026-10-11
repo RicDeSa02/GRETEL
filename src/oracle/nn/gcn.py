@@ -43,8 +43,8 @@ class DownstreamGCN(GCN):
                     nn.init.constant_(m.bias, 0)
         
     def forward(self, node_features, edge_index, edge_weight, batch):
-        node_features = super().forward(node_features, edge_index, edge_weight, batch)
-        return self.downstream_layers(node_features)
+        node_features_ = super().forward(node_features, edge_index, edge_weight, batch)
+        return self.downstream_layers(node_features_)
     
     def __init__downstream_layers(self):
         ############################################

@@ -138,11 +138,12 @@ class BAShapes(Generator):
             edges_count += graph.number_of_edges()
             # Append the instance to the dataset
             self.dataset.instances.append(GraphInstance(id=i, data=adj_matrix, label=label, node_features=features))
-            self.context.logger.info(f"Generated instance with id {i}, label={label}")
+            # self.context.logger.info(f"Generated instance with id {i}, label={label}")
 
         nodes_avg = nodes_count / self.num_instances
         edges_avg = edges_count / self.num_instances
-        print("Nodes avg:", nodes_avg, "Edges avg:", edges_avg)
+        # print("Nodes avg:", nodes_avg, "Edges avg:", edges_avg)
+        self.context.logger.info(f"Generated dataset - instances: {self.num_instances} - nodes: {self.nodes_num} - edges per node: {self.edges_per_node} - Nodes avg: {nodes_avg:.2f} - Edges avg: {edges_avg:.2f}")
         #input()
             
     def get_num_instances(self):

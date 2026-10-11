@@ -51,7 +51,7 @@
       }
     ],
     
-    "explainers": [{"class": "src.explainer.XPlore.XPlore",
+    "explainers": [{"class": "src.explainer.perturbation.XPlore.XPlore",
     "parameters": {"alpha": 0.1, "K": 50, "beta": 0.5, "extended": false, "visualize": false}}],
     "compose_mes" : "config/snippets/default_metrics.json",
     "compose_strs" : "config/snippets/default_store_paths.json",

@@ -29,6 +29,9 @@ from src.evaluation.evaluation_metric_dumper import InstancesDumper
 from src.evaluation.evaluation_metric_embed_dataset import EmbedDatasetMetric
 from src.evaluation.evaluation_metric_suppl import SupplMetric
 from src.evaluation.evaluation_metric_labels_correctness_nodes import LabelsCorrectnessNodesMetric
+from src.evaluation.evaluation_metric_iterations_count import IterationsCountMetric
+from src.evaluation.evaluation_metric_chemical_validity import ChemicalValidityMetric
+from src.evaluation.evaluation_metric_original_chemical_validity import OriginalChemicalValidityMetric
 
 
 
@@ -131,6 +134,15 @@ class EvaluationMetricFactory:
 
         elif metric_name == 'labels_correctness_nodes':
             return self.get_labels_correctness_nodes_metric(config_dict=metric_dict)
+
+        elif metric_name == 'iterations':
+            return self.get_iterations_metric(config_dict=metric_dict)
+
+        elif metric_name == 'chemical_validity':
+            return self.get_chemical_validity_metric(config_dict=metric_dict)
+
+        elif metric_name == 'original_chemical_validity':
+            return self.get_original_chemical_validity_metric(config_dict=metric_dict)
 
         else:
             raise ValueError('''The provided evaluation metric name does not match any evaluation
@@ -272,3 +284,14 @@ class EvaluationMetricFactory:
         result = LabelsCorrectnessNodesMetric(config_dict)
         return result
 
+    def get_iterations_metric(self, config_dict=None) -> EvaluationMetric:
+            result = IterationsCountMetric(config_dict)
+            return result
+
+    def get_chemical_validity_metric(self, config_dict=None) -> EvaluationMetric:
+            result = ChemicalValidityMetric(config_dict)
+            return result
+
+    def get_original_chemical_validity_metric(self, config_dict=None) -> EvaluationMetric:
+        result = OriginalChemicalValidityMetric(config_dict)
+        return result

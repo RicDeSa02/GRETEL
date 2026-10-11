@@ -28,11 +28,12 @@
             }
         },
         "oracle": {
-            "class": "src.oracle.nn.torch.OracleTorch",
+            "class": "src.oracle.nn.torch_full.OracleTorch",
             "parameters": {
                 "epochs":300,
                 "batch_size": 1024,
                 "early_stopping_threshold":1e-4,
+                "device": "cpu",
                 "optimizer": {
                     "class": "torch.optim.RMSprop",
                     "parameters": {
@@ -47,7 +48,7 @@
                 },
                 "model": {
                     "class": "src.oracle.nn.gcn_multiclass.DownstreamGCN",
-                    "parameters": {"num_conv_layers":5,"num_dense_layers":2,"conv_booster":2,"linear_decay":1.8}
+                    "parameters": {"num_conv_layers":5,"num_dense_layers":2,"conv_booster":2,"linear_decay":1.8, "use_weights": true}
                 }
             }   
         }
@@ -55,7 +56,7 @@
     "explainers": [ 
         {"class": "src.explainer.generative.cf2.CF2Explainer","parameters":{"epochs": 20, "batch_size_ratio": 0.2, "lr" : 0.02, "alpha" : 0.7, "lam" : 20, "gamma" : 0.9}}
     ],
-    "compose_mes" : "config/snippets/default_metrics.json",
+    "compose_mes" : "config/snippets/metrics_fully_connected.json",
     "compose_strs" : "config/snippets/default_store_paths.json",
     "embedders": [
         {"class": "src.embedder.karateclub.FeatherGraph.FeatherGraphEmbedder", "parameters":{        }},

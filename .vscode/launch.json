@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Experiment: ASD / DCE + LocalSearch (fold 0)",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
@@ -15,7 +15,7 @@
         },
         {
             "name": "Experiment: Synthie / DCE + LocalSearch (fold 0)",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
@@ -24,7 +24,7 @@
         },
         {
             "name": "Experiment: config of the open file",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
@@ -33,7 +33,7 @@
         },
         {
             "name": "Queue: run the revision batch (1 worker)",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "scripts/run_revision_queue.py",
             "console": "integratedTerminal",
@@ -42,7 +42,7 @@
         },
         {
             "name": "Smoke test: ASD, non-trainable variants",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "tests/regression_smoke.py",
             "console": "integratedTerminal",
@@ -51,7 +51,7 @@
         },
         {
             "name": "Checks: config references + import smoke",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "tools/check_config_refs.py",
             "console": "integratedTerminal",

@@ -10,7 +10,7 @@ from src.dataset.instances.base import DataInstance
 
 class GraphInstance(DataInstance):
 
-    def __init__(self, id, label, data, node_features=None, edge_features=None, edge_weights=None, graph_features=None, dataset=None, directed=False, atom_types=None, n_atom_types=None):
+    def __init__(self, id, label, data, node_features=None, edge_features=None, edge_weights=None, graph_features=None, dataset=None, directed=False, iteration=0):
         super().__init__(id, label, data, dataset=dataset)
         self.node_features = self.__init_node_features(node_features).astype(np.float32)
         self.edge_features = self.__init_edge_features(edge_features).astype(np.float32)
@@ -18,8 +18,9 @@ class GraphInstance(DataInstance):
         self.graph_features = graph_features
         self._nx_repr = None
         self.directed = directed
-        self.atom_types = atom_types
-        self.n_atom_types = n_atom_types
+        # self.atom_labels = atom_labels
+        # self.n_atom_types = n_atom_types
+        self.iteration = iteration
 
         num_nodes = self.data.shape[0]
         num_edges = np.count_nonzero(self.data)
@@ -50,20 +51,21 @@ class GraphInstance(DataInstance):
         _edge_weights = deepcopy(self.edge_weights, memo)
         _graph_features = deepcopy(self.graph_features, memo)
         _directed = deepcopy(self.directed, memo)
-        _atom_types = deepcopy(self.atom_types, memo)
-        _n_atom_types = deepcopy(self.n_atom_types, memo)
+        # _atom_label = deepcopy(self.atom_label, memo)
+        # _n_atom_types = deepcopy(self.n_atom_types, memo)
 
         return GraphInstance(id=_new_id, 
-                             label=_new_label, 
-                             data=_data, 
-                             node_features=_node_features, 
-                             edge_features=_edge_features, 
-                             edge_weights=_edge_weights, 
-                             graph_features=_graph_features, 
-                             directed=_directed,
-                             dataset=_dataset,
-                             atom_types=_atom_types,
-                             n_atom_types=_n_atom_types)
+                            label=_new_label, 
+                            data=_data, 
+                            node_features=_node_features, 
+                            edge_features=_edge_features, 
+                            edge_weights=_edge_weights, 
+                            graph_features=_graph_features, 
+                            directed=_directed,
+                            dataset=_dataset,
+                            # atom_label=_atom_labels,
+                            # n_atom_types=_n_atom_types
+                            )
 
     def get_nx(self):
         if not self._nx_repr:

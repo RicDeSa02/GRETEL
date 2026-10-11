@@ -11,10 +11,12 @@ class BAShapes(Generator):
 
         self.dataset_name = "BAShapes"
         self.num_instances = self.local_config['parameters'].get('num_instances', 1000)
-        self.nodes_num = self.local_config['parameters'].get('nodes_num', 5) # Number of nodes in the graph
-        self.edges_per_node = self.local_config['parameters'].get('edges_per_new_node', 1) # Number of edges to attach from new node to existing nodes   
+        self.nodes_num = self.local_config['parameters'].get('nodes_num', 32) # Number of nodes in the graph
+        self.edges_per_node = self.local_config['parameters'].get('edges_per_node', 1) # Number of edges to attach from new node to existing nodes
+        self.seed = self.local_config['parameters'].get('seed', 0)
+        self.rng = np.random.default_rng(self.seed)
 
-        assert ((isinstance(self.num_instances, float) or isinstance(self.num_instances, int)) and self.num_instances >= 1)
+        assert ((isinstance(self.num_instances, int)) and self.num_instances >= 1)
         assert ((isinstance(self.nodes_num, int)) and self.nodes_num >= 5)
         assert ((isinstance(self.edges_per_node, int)) and self.edges_per_node >= 0)
 
@@ -26,8 +28,8 @@ class BAShapes(Generator):
 
         # set defaults
         local_config['parameters']['num_instances'] = local_config['parameters'].get('num_instances', 1000)
-        local_config['nodes_num'] = local_config['parameters'].get('nodes_num', 32)
-        local_config['edges_per_node'] = local_config['parameters'].get('edges_per_node', 1)    
+        local_config['parameters']['nodes_num'] = local_config['parameters'].get('nodes_num', 32)
+        local_config['parameters']['edges_per_node'] = local_config['parameters'].get('edges_per_node', 1)    
 
         
     def generate_dataset(self):
@@ -49,20 +51,21 @@ class BAShapes(Generator):
 
         for i in range(self.num_instances):
             # Randomly determine if the graph is going to contain a motif
-            has_motif = np.random.randint(0, 2)  # 2 excluded
+            has_motif = self.rng.integers(0, 2)  # 2 excluded
+            graph_seed = int(self.rng.integers(0, 2**32 - 1))
             
             if has_motif: # Generate BA graph with house motif
                 
-                ba_graph = nx.barabasi_albert_graph(n=self.nodes_num-5, m=self.edges_per_node)
+                ba_graph = nx.barabasi_albert_graph(n=self.nodes_num-5, m=self.edges_per_node, seed=graph_seed)
 
                 # Generate the house motif
                 house = create_house_motif()
                 house = nx.convert_node_labels_to_integers(house, first_label=ba_graph.number_of_nodes())  # Re-label motif nodes
 
                 # Randomize the house node to attach
-                house_attachment_node = np.random.choice(list(house.nodes))
+                house_attachment_node = self.rng.choice(list(house.nodes))
                 # Select a random node in BA graph to attach the house motif
-                ba_attachment_node = np.random.choice(list(ba_graph.nodes))
+                ba_attachment_node = self.rng.choice(list(ba_graph.nodes))
                 
                 # Combine BA graph and house motif
                 combined = nx.disjoint_union(ba_graph, house)
@@ -82,7 +85,7 @@ class BAShapes(Generator):
             
             else: # Generate a plain BA graph
                 
-                ba_graph = nx.barabasi_albert_graph(n=self.nodes_num, m=self.edges_per_node)
+                ba_graph = nx.barabasi_albert_graph(n=self.nodes_num, m=self.edges_per_node, seed=graph_seed)
                 
                 adj_matrix = nx.to_numpy_array(ba_graph)
                 label = 0  # Plain BA graph
@@ -102,11 +105,12 @@ class BAShapes(Generator):
             edges_count += graph.number_of_edges()
             # Append the instance to the dataset
             self.dataset.instances.append(GraphInstance(id=i, data=adj_matrix, label=label, node_features=features))
-            self.context.logger.info(f"Generated instance with id {i}, label={label}")
+            # self.context.logger.info(f"Generated instance with id {i}, label={label}")
 
         nodes_avg = nodes_count / self.num_instances
         edges_avg = edges_count / self.num_instances
-        print("Nodes avg:", nodes_avg, "Edges avg:", edges_avg)
+        # print("Nodes avg:", nodes_avg, "Edges avg:", edges_avg)
+        self.context.logger.info(f"Generated dataset - instances: {self.num_instances} - nodes: {self.nodes_num} - edges per node: {self.edges_per_node} - Nodes avg: {nodes_avg:.2f} - Edges avg: {edges_avg:.2f}")
         #input()
             
     def get_num_instances(self):

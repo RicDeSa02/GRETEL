@@ -13,6 +13,9 @@ class Embedder(Trainable,metaclass=ABCMeta):
     def get_embedding(self, instance):
         pass
 
+    def create(self):
+        self.fit()
+
     def write(self):
         filepath = self.context.get_path(self)
         dump = {

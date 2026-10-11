@@ -93,11 +93,13 @@ class TreeCyclesRandGen(Generator):
             # print("Nodes:", graph.number_of_nodes(), "Edges:", graph.number_of_edges())
             nodes_count += graph.number_of_nodes()
             edges_count += graph.number_of_edges()
-            self.context.logger.info("Generated instance with id:"+str(i))
+            # self.context.logger.info("Generated instance with id:"+str(i))
         
         nodes_avg = nodes_count / self.num_instances
         edges_avg = edges_count / self.num_instances
-        print("Nodes avg:", nodes_avg, "Edges avg:", edges_avg)   
+        # print("Nodes avg:", nodes_avg, "Edges avg:", edges_avg)   
+        self.context.logger.info(f"Generated dataset - instances: {self.num_instances} - nodes per instance: {self.num_nodes_per_instance} - ratio nodes in cycles: {self.ratio_nodes_in_cycles} - Nodes avg: {nodes_avg:.2f} - Edges avg: {edges_avg:.2f}")    
+
         # input()
     
     

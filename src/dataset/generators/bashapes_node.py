@@ -103,7 +103,9 @@ class BAShapes(Generator):
             
             # Append the instance to the dataset
             self.dataset.instances.append(GraphInstance(id=i, data=adj_matrix, label=node_labels, node_features=features))
-            self.context.logger.info(f"Generated instance with id {i}, label={graph_label}")
+            # self.context.logger.info(f"Generated instance with id {i}, label={graph_label}")
+        
+        # self.context.logger.info(f"Generated dataset - instances: {self.num_instances} - nodes: {self.nodes_num} - edges per node: {self.edges_per_node} - Nodes avg: {nodes_avg:.2f} - Edges avg: {edges_avg:.2f}")
                 
     def get_num_instances(self):
         return len(self.dataset.instances)

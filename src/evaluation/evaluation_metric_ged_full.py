@@ -1,4 +1,5 @@
 from src.evaluation.evaluation_metric_base import EvaluationMetric
+from src.dataset.instances.graph import GraphInstance
 from src.core.oracle_base import Oracle
 from src.core.explainer_base import Explainer
 import numpy as np
@@ -20,8 +21,14 @@ class GraphEditDistanceFullMetric(EvaluationMetric):
         self.undirected = undirected
         
 
-    def evaluate(self, instance_1 , instance_2 , oracle : Oracle=None, explainer : Explainer=None, dataset = None):
+    def evaluate(self, instance_1:(GraphInstance), instance_2:(GraphInstance), oracle : Oracle=None, explainer : Explainer=None, dataset = None):
         """ It counts the edge weight instead of adjacency matrix, but in practice it is the same as standard GED
+
+        Args:
+            instance_1 (GraphInstance) :
+                Original instance.
+            instance_2 (GraphInstance):
+                Counterfactual instance.
         """
         
         self.data_1 = torch.tensor(instance_1.data)

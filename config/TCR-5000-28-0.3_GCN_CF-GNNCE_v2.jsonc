@@ -52,7 +52,7 @@
     }
 ],
     
-    "explainers": [{"class": "src.explainer.CF-GNNCE.CFGNNCExplainer",
+    "explainers": [{"class": "src.explainer.perturbation.CF-GNNCE.CFGNNCExplainer",
     "parameters": {"alpha": 0.1, "K": 500, "beta": 0, "gamma": 0.001}}],
     "compose_mes" : "config/snippets/default_metrics.json",
     "compose_strs" : "config/snippets/default_store_paths.json"

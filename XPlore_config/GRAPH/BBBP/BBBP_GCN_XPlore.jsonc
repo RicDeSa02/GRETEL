@@ -51,7 +51,7 @@
         }
     ],
     "explainers": [{
-      "class": "src.explainer.XPlore.XPlore",
+      "class": "src.explainer.perturbation.XPlore.XPlore",
       "parameters": {
         "alpha": 1e0, 
         "K": 1000, 

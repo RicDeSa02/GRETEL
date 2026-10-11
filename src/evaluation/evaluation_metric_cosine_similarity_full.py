@@ -1,4 +1,5 @@
 from src.evaluation.evaluation_metric_base import EvaluationMetric
+from src.dataset.instances.graph import GraphInstance
 from src.core.oracle_base import Oracle
 from src.core.explainer_base import Explainer
 from src.core.embedder_base import Embedder
@@ -16,13 +17,13 @@ class CosineSimilarityFullMetric(EvaluationMetric):
         super().__init__(config_dict)
         self._name = 'Cosine_Similarity'          
 
-    def evaluate(self, instance_1 , instance_2 , oracle : Oracle=None, explainer : Explainer=None, dataset = None, embedders:dict[Embedder]=None):
+    def evaluate(self, instance_1:GraphInstance, instance_2:GraphInstance, oracle : Oracle=None, explainer : Explainer=None, dataset = None, embedders:dict[Embedder]=None):
         """
         Evaluates the cosine similarity between the embeddings of instance_1 and instance_2.
         
         Parameters:
-            instance_1: The original graph.
-            instance_2: The counterfactual graph.
+            instance_1 (GraphInstance): The original graph.
+            instance_2 (GraphInstance): The counterfactual graph.
             oracle, explainer, dataset: Additional parameters (unused in this snippet).
         
         Returns:

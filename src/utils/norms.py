@@ -23,14 +23,14 @@ class GraphNorm(nn.Module):
 
     def forward(self, x, batch):
         batch_size = int(batch.max().item() + 1)
-        out = torch.zeros_like(x)
+        out = torch.zeros_like(x).to(self.weight.device)
 
         for b in range(batch_size):
             idx = (batch == b)
             xb = x[idx]
 
-            mean = xb.mean(dim=0, keepdim=True)
-            var  = xb.var(dim=0, keepdim=True, unbiased=False)
+            mean = xb.mean(dim=0, keepdim=True).to(out.device)
+            var  = xb.var(dim=0, keepdim=True, unbiased=False).to(out.device)
 
             out[idx] = (xb - mean) / (var + self.eps).sqrt()
 

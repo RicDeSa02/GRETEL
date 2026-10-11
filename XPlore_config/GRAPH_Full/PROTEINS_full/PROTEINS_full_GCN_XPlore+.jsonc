@@ -28,11 +28,12 @@
             }
         },
         "oracle": {
-            "class": "src.oracle.nn.torch.OracleTorch",
+            "class": "src.oracle.nn.torch_full.OracleTorch",
             "parameters": {
                 "epochs": 2000,
                 "batch_size": 64,
                 "early_stopping_threshold":1e-4,
+                "device": "cpu",
                 "optimizer": {
                     "class": "torch.optim.RMSprop",
                     "parameters": {
@@ -47,16 +48,16 @@
                 },
                 "model": {
                     "class": "src.oracle.nn.gcn.DownstreamGCN",
-                    "parameters": {"num_conv_layers":3,"num_dense_layers":2,"conv_booster":2,"linear_decay":1.8}
+                    "parameters": {"num_conv_layers":3,"num_dense_layers":2,"conv_booster":2,"linear_decay":1.8, "use_weights": true}
                 }
             }   
         }
     } ],
     "explainers": [{
-      "class": "src.explainer.XPlore.XPlore",
+      "class": "src.explainer.perturbation.XPlore.XPlore",
       "parameters": {
         "alpha": 0.1, 
-        "K": 1000, 
+        "K": 500, 
         "beta": 0.5, 
         "extended": true, 
         "gamma_edge": 0,
@@ -64,8 +65,9 @@
         "change_node_feat": false, 
         "gamma_node_feat": 0,
         "multi_label_classification": true,
-        "visualize": false}}],
-    "compose_mes" : "config/snippets/default_metrics.json",
+        "visualize": false,
+        "boost_alpha": true}}],
+    "compose_mes" : "config/snippets/metrics_fully_connected.json",
     "compose_strs" : "config/snippets/default_store_paths.json",
     "embedders": [
         {"class": "src.embedder.karateclub.FeatherGraph.FeatherGraphEmbedder", "parameters":{        }},

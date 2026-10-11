@@ -24,10 +24,11 @@
             }
         },
         "oracle": {
-            "class": "src.oracle.nn.torch.OracleTorch",
+            "class": "src.oracle.nn.torch_full.OracleTorch",
             "parameters": {
                 "epochs": 20,
                 "batch_size": 32,
+                "device": "cpu",
                 "optimizer": {
                     "class": "torch.optim.RMSprop",
                     "parameters": {
@@ -46,7 +47,8 @@
                     "num_conv_layers":3,
                     "num_dense_layers":1,
                     "conv_booster":2,
-                    "linear_decay":1.8
+                    "linear_decay":1.8,
+                    "use_weights": true
                 }
               } 
             }   
@@ -55,7 +57,7 @@
     ],
     
     "explainers": [{"class": "src.explainer.generative.clear.CLEARExplainer","parameters":{ "epochs": 10, "lr": 0.01, "lambda_cfe": 0.1, "alpha": 0.4, "batch_size": 32 }}],
-    "compose_mes" : "config/snippets/default_metrics.json",
+    "compose_mes" : "config/snippets/metrics_fully_connected.json",
     "compose_strs" : "config/snippets/default_store_paths.json",
     "embedders": [
       {"class": "src.embedder.karateclub.FeatherGraph.FeatherGraphEmbedder", "parameters":{        }},

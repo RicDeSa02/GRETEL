@@ -55,7 +55,7 @@
     } ],
     "explainers": [ 
         {
-            "class": "src.explainer.XPlore.XPlore",
+            "class": "src.explainer.perturbation.XPlore.XPlore",
             "parameters": {
                 "learning_rate": 0.1,
                 "K": 50,

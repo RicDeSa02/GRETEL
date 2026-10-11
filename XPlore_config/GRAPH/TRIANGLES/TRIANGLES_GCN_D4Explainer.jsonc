@@ -54,7 +54,7 @@
     } ],
     "explainers": [ 
         {
-            "class": "src.explainer.D4Explainer.explainers.diff_explainer.DiffExplainer",
+            "class": "src.explainer.generative.D4Explainer.explainers.diff_explainer.DiffExplainer",
             "parameters": {
                 "task": "gc",
                 "dataset": "TRIANGLES",

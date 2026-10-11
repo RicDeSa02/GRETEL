@@ -32,6 +32,7 @@ class COMBINEX(Explainer):
             if torch.backends.mps.is_available()
             else "cpu"
         )
+        self.device = "cpu"
         
         # Initialize best loss tracking
         self.best_loss = np.inf
@@ -115,15 +116,15 @@ class COMBINEX(Explainer):
         """
         self.optimizer.zero_grad()
         
-        """# Ensure batch is available
+        # Ensure batch is available
         if not hasattr(graph, 'batch') or graph.batch is None:
             batch = torch.zeros(graph.x.shape[0], dtype=torch.long, device=self.device)
         else:
-            batch = graph.batch.to(self.device)"""
+            batch = graph.batch.to(self.device)
         
         # Forward pass through graph perturber
-        differentiable_output = self.graph_perturber.forward(graph.x.to(self.device), graph.batch)
-        model_out, V_pert, EP_x = self.graph_perturber.forward_prediction(graph.x.to(self.device), graph.batch)
+        differentiable_output = self.graph_perturber.forward(graph.x.to(self.device), batch)
+        model_out, V_pert, EP_x = self.graph_perturber.forward_prediction(graph.x.to(self.device), batch)
         
         # Get predictions
         y_pred_new_actual = torch.argmax(model_out, dim=1)
@@ -160,7 +161,7 @@ class COMBINEX(Explainer):
         # Note: Original code checked for equality, but counterfactuals typically require different predictions
         # Adjust this condition based on your specific requirements
         if y_pred_new_actual != original_label and loss.item() < self.best_loss:
-            print("Building counterfactual graph")
+            # print("Building counterfactual graph")
             counterfactual = self._build_counterfactual_graph_gc(
                 x=V_pert,
                 edge_index=cf_edges,

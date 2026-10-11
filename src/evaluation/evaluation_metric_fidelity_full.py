@@ -1,4 +1,5 @@
 from src.evaluation.evaluation_metric_base import EvaluationMetric
+from src.dataset.instances.graph import GraphInstance
 from src.core.oracle_base import Oracle
 from src.core.explainer_base import Explainer
 import torch
@@ -13,7 +14,14 @@ class FidelityFullMetric(EvaluationMetric):
         super().__init__(config_dict)
         self._name = 'FidelityFull'
 
-    def evaluate_full(self, instance_1 , instance_2 , oracle : Oracle=None, explainer : Explainer=None, dataset = None):
+    def evaluate_full(self, instance_1:GraphInstance, instance_2:GraphInstance, oracle : Oracle=None, explainer : Explainer=None, dataset = None):
+        """
+        Args:
+            instance_1 (GraphInstance) :
+                Original instance.
+            instance_2 (GraphInstance):
+                Counterfactual instance.
+        """
 
         self.device = oracle.device
 
@@ -46,12 +54,19 @@ class FidelityFullMetric(EvaluationMetric):
         
         return result
     
-    def evaluate(self, instance_1 , instance_2 , oracle : Oracle=None, explainer : Explainer=None, dataset = None):
-
+    def evaluate(self, instance_1:GraphInstance, instance_2:GraphInstance, oracle : Oracle=None, explainer : Explainer=None, dataset = None):
+        """
+        Args:
+            instance_1 (GraphInstance) :
+                Original instance.
+            instance_2 (GraphInstance):
+                Counterfactual instance.
+        """
         self.device = oracle.device
 
         label_instance_1 = oracle.predict(instance_1)
         label_instance_2 = oracle.predict(instance_2)
+        oracle._call_counter -= 2
         
         prediction_fidelity = 1 if (label_instance_1 == instance_1.label) else 0
         

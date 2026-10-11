@@ -28,11 +28,12 @@
             }
         },
         "oracle": {
-            "class": "src.oracle.nn.torch.OracleTorch",
+            "class": "src.oracle.nn.torch_full.OracleTorch",
             "parameters": {
                 "epochs":100,
                 "batch_size": 512,
                 "early_stopping_threshold":1e-4,
+                "device": "cpu",
                 "optimizer": {
                     "class": "torch.optim.RMSprop",
                     "parameters": {
@@ -47,14 +48,14 @@
                 },
                 "model": {
                     "class": "src.oracle.nn.gcn.DownstreamGCN",
-                    "parameters": {"num_conv_layers":3,"num_dense_layers":1,"conv_booster":2,"linear_decay":1.8}
+                    "parameters": {"num_conv_layers":3,"num_dense_layers":1,"conv_booster":2,"linear_decay":1.8, "use_weights": true}
                 }
             }   
         }
     } ],
     "explainers": [ 
         {
-            "class": "src.explainer.D4Explainer.explainers.diff_explainer.DiffExplainer",
+            "class": "src.explainer.generative.D4Explainer.explainers.diff_explainer.DiffExplainer",
             "parameters": {
                 "task": "gc",
                 "dataset": "PROTEINS_full",
@@ -62,7 +63,7 @@
             }
         }
     ],
-    "compose_mes" : "config/snippets/default_metrics.json",
+    "compose_mes" : "config/snippets/metrics_fully_connected.json",
     "compose_strs" : "config/snippets/default_store_paths.json",
     "embedders": [
         {"class": "src.embedder.karateclub.FeatherGraph.FeatherGraphEmbedder", "parameters":{        }},

@@ -118,7 +118,8 @@ class Context(object):
 
     def get_name(self, inst, dictionary=None, alias=None):        
         cls = inst.__class__.__name__ if not alias else alias
-        dictionary= clean_cfg(inst.local_config) if dictionary is None else clean_cfg(dictionary)
+        dictionary= clean_cfg(inst.frozen_config) if dictionary is None else clean_cfg(dictionary)
+        # dictionary= clean_cfg(inst.local_config) if dictionary is None else clean_cfg(dictionary)
         md5_hash = hashlib.md5()       
 
         def flatten_dict(d, parent_key='', sep='_'):

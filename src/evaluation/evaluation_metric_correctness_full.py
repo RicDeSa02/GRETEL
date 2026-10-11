@@ -1,4 +1,5 @@
 from src.evaluation.evaluation_metric_base import EvaluationMetric
+from src.dataset.instances.graph import GraphInstance
 from src.core.oracle_base import Oracle
 from src.core.explainer_base import Explainer
 from src.evaluation.evaluation_metric_ged import GraphEditDistanceMetric
@@ -17,7 +18,14 @@ class CorrectnessFullMetric(EvaluationMetric):
         self._name = 'CorrectnessFull'
         self._ged = GraphEditDistanceMetric() # GraphEditDistanceFullMetric()
 
-    def evaluate_full(self, instance_1 , instance_2 , oracle : Oracle=None, explainer : Explainer=None, dataset = None):
+    def evaluate_full(self, instance_1:GraphInstance, instance_2:GraphInstance, oracle : Oracle=None, explainer : Explainer=None, dataset = None):
+        """
+        Args:
+            instance_1 (GraphInstance) :
+                Original instance.
+            instance_2 (GraphInstance):
+                Counterfactual instance.
+        """
 
         self.device = oracle.device
         # print(f"metric device: {self.device}")
@@ -82,12 +90,19 @@ class CorrectnessFullMetric(EvaluationMetric):
         
         return result
     
-    def evaluate(self, instance_1 , instance_2 , oracle : Oracle=None, explainer : Explainer=None, dataset = None):
-
+    def evaluate(self, instance_1:GraphInstance, instance_2:GraphInstance, oracle : Oracle=None, explainer : Explainer=None, dataset = None):
+        """
+        Args:
+            instance_1 (GraphInstance) :
+                Original instance.
+            instance_2 (GraphInstance):
+                Counterfactual instance.
+        """
         self.device = oracle.device
 
         label_instance_1 = oracle.predict(instance_1)
         label_instance_2 = oracle.predict(instance_2)
+        oracle._call_counter -= 2
 
         ged = self._ged.evaluate(instance_1, instance_2, oracle)
 

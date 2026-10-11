@@ -48,7 +48,7 @@
             }
         }
     ],
-    "explainers": [{"class": "src.explainer.XPlore.XPlore",
+    "explainers": [{"class": "src.explainer.perturbation.XPlore.XPlore",
     "parameters": {"alpha": 0.1, "K": 500, "beta": 1, "gamma": 0.001}}]
     // α: Learning Rate, K: Number of iterations, β: Loss controll (Ldist wrt Lpred) (Eq.1 [4]), γ: Missing edges addition percentage (per edge)
     // α: 0.1, K: 500, β: 0.5 // Paper best parameters (Hyperparameter Search [6.4])

@@ -11,7 +11,7 @@
         }
     },
     "do-pairs":[{"compose_tcr_gcn" : "config/snippets/do-pairs/TCR-5000-10-0.3_GCN.json"} ],
-    "explainers": [{"class": "src.explainer.XPlore.XPlore",
+    "explainers": [{"class": "src.explainer.perturbation.XPlore.XPlore",
     "parameters": {
         "alpha": 1e0, 
         "K": 500, 

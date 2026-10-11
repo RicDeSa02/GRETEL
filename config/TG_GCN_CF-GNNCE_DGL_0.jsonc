@@ -11,7 +11,7 @@
         }
     },
     "do-pairs":[{"compose_tcr_gcn" : "config/snippets/do-pairs/TG_GCN_dgl.json"} ],
-    "explainers": [{"class": "src.explainer.CF-GNNCE.CFGNNCExplainer",
+    "explainers": [{"class": "src.explainer.perturbation.CF-GNNCE.CFGNNCExplainer",
     "parameters": {"alpha": 0.1, "K": 500, "beta": 0.5, "extended": true, "gamma_edge": 0, "change_node_feat": true, "gamma_node_feat": 0, "visualize": false}}],
     "compose_mes" : "config/snippets/default_metrics.json",
     "compose_strs" : "config/snippets/default_store_paths.json"

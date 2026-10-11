@@ -43,7 +43,9 @@ class TUDataset(Generator):
     
     def init(self):
         self.dataset_name = self.local_config['parameters']['alias']
-        self.prepare_data()
+        base_path = self.prepare_data()
+        # read the dataset and process it
+        self.read_file = join(base_path, f'{self.dataset_name}.pkl')
         self.generate_dataset()
 
     def generate_dataset(self):
@@ -52,17 +54,17 @@ class TUDataset(Generator):
 
     def populate(self):
         # input(self.dataset.__dict__)
-        DATASETS_WITOHOUT_NODE_ATTR = {"COLLAB", "IMDB-MULTI", "IMDB-BINARY"}
-        CHEMICAL_DATASETS = {"MUTAG", "Mutagenicity", "AIDS", "BZR", "COX2", "BBBP", "DHFR", "PTC_MR", "PTC_FM", "PTC_FR", "PTC_MM", "NCI1", "NCI109"}
+        CHEMICAL_DATASETS = {"MUTAG", "Mutagenicity", "AIDS", "BZR", "COX2", "DHFR", "PTC_MR", "PTC_FM", "PTC_FR", "PTC_MM", "NCI1", "NCI109"}
         data = torch.load(self.read_file)
         # features_map = {f'attribute_{i}': i for i in range(data[0].x.size(1))} if self.dataset_name not in DATASETS_WITOHOUT_NODE_ATTR else {f'attribute_{i}': i for i in range(data[0].num_nodes)}
-        features_map = {f'attribute_{i}': i for i in range(data[0].x.size(1))} if self.dataset_name not in DATASETS_WITOHOUT_NODE_ATTR else {}
+        features_map = {f'attribute_{i}': i for i in range(data[0].x.size(1))} if data.num_node_features > 0 else {}
         self.dataset.node_features_map = features_map
+        self.dataset.data = data
 
         # TODO edge_map, graph_map
 
         for id, instance in enumerate(data):
-            if self.dataset_name in DATASETS_WITOHOUT_NODE_ATTR:
+            if data.num_node_features < 1:
                 # print(f"instance.num_nodes.shape: {instance.num_nodes}")
                 # input()
                 # adj_matrix = torch.zeros((instance.num_nodes, instance.num_nodes), dtype=torch.float)
@@ -80,21 +82,27 @@ class TUDataset(Generator):
                 continue
                 
             edge_features = None
-            if getattr(g, "edge_attr", None) is not None:
-                edge_features = g.edge_attr
-            elif getattr(g, "edge_weight", None) is not None:
-                edge_features = g.edge_weight
+            try:
+                edge_features = instance.edge_weights.numpy()
+            except AttributeError:
+                self.context.logger.info(f'Instance id = {id} does not have edge features.')
 
             # if self.dataset_name == "TRIANGLES": print("TRIANGLES dataset detected, adjusting labels by -1")
             label = instance.y.item()-1 if self.dataset_name == "TRIANGLES" else instance.y.item()
 
-            if self.dataset_name in CHEMICAL_DATASETS:
-                atom_types = np.argmax(instance.x.numpy(), axis=1).astype(float)  # shape (N,)
-                n_atom_types = instance.x.shape[1]
-            else:
-                atom_types = None
-                n_atom_types = None
-            # input(atom_types)
+            # if self.dataset_name in CHEMICAL_DATASETS:
+            #     # bond_labels: {(u, v) with u < v: raw label}
+            #     labels = np.argmax(instance.edge_attr.numpy(), axis=1)
+            #     bond_labels = {}
+            #     for (u, v), l in zip(instance.edge_index.t().tolist(), labels):
+            #         bond_labels[(min(u, v), max(u, v))] = int(l)
+
+            #     graph_features = {"bond_labels": bond_labels}
+
+            # else:
+            #     graph_features = None
+
+            assert (torch.tensor(adj_matrix).nonzero().t() == instance.edge_index).all() # NOTE Verifying alignment of edge_index reconstruction. This used by ChemicalValidityMetric to reconstruct bond_labels and check chemical validity.
 
             self.dataset.instances.append(GraphInstance(id=id, 
                                                         label=label, 
@@ -102,6 +110,6 @@ class TUDataset(Generator):
                                                         graph_features=None,
                                                         node_features=instance.x.numpy(),
                                                         edge_features=edge_features,
-                                                        atom_types=atom_types,
-                                                        n_atom_types = n_atom_types
+                                                        # atom_labels=atom_labels,
+                                                        # n_atom_types = n_atom_types,
                                                         ))

@@ -118,10 +118,7 @@ class CLEARExplainer(Trainable, Explainer):
             model_return = self.model(features, causality, adj, labels)
             adj_reconst, features_reconst = model_return['adj_reconst'], model_return['features_reconst']
             
-            print("adj stats:",
-                adj_reconst.min().item(),
-                adj_reconst.max().item(),
-                torch.isnan(adj_reconst).any().item())
+            # print("adj stats:", adj_reconst.min().item(), adj_reconst.max().item(), torch.isnan(adj_reconst).any().item())
             adj_reconst_binary = torch.bernoulli(adj_reconst.squeeze())
             
             cf_instance = GraphInstance(id=instance.id,

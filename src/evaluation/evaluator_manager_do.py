@@ -48,6 +48,8 @@ class EvaluatorManager:
 
         # Shuffling dataset_oracles pairs and explainers will enabling by chance
         # parallel distributed cration and training.
+        do_pairs_list = list(self.context.conf['do-pairs'])  # copy with list() so hashing of the config is deterministic/reproducible: Datasets, Oracles and Explainers are not recreated when they already exist
+        explainers_list = list(self.context.conf['explainers'])  # copy with list() so hashing of the config is deterministic/reproducible: Datasets, Oracles and Explainers are not recreated when they already exist
         random.shuffle(do_pairs_list)
         random.shuffle(explainers_list) 
 
@@ -69,7 +71,7 @@ class EvaluatorManager:
                 # Fit the Graph Embedding models on the dataset
                 for embedder_snippet in embedder_list:
                     embedder = self.context.factories['embedders'].get_embedder(embedder_snippet, dataset)
-                    embedder.fit()
+                    # embedder.fit()
                     self.embedders[embedder.__class__.__name__] = embedder                    
             
                 # Creating the evaluator

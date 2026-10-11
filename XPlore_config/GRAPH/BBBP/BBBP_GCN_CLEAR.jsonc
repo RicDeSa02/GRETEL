@@ -1,5 +1,3 @@
-// RSGG-CE CANNOT WORK FOR MULTI-CLASS CLASSIFICATION
-
 {  
     "experiment" : {
         "scope": "GRAPH/BBBP/CLEAR",

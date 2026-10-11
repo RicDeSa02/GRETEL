@@ -75,4 +75,5 @@ class TorchDataset(Dataset):
         return adj, x, label
     
     def __getitem__(self, index):
-        return self.instances(index)
+      #  return self.instances(index)
+        return self.instances[index]

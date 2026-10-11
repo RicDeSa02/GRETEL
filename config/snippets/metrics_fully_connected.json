@@ -6,5 +6,8 @@
     {"name": "graph_edit_distance", "parameters": {}},
     {"name": "oracle_calls", "parameters": {}},
     {"name": "sparsity", "parameters": {}},
-    {"name": "cosine_similarity", "parameters": {}}
+    {"name": "cosine_similarity", "parameters": {}},
+    {"name": "iterations", "parameters": {}},
+    {"name": "original_chemical_validity", "parameters": {}},
+    {"name": "chemical_validity", "parameters": {}}
 ]}
