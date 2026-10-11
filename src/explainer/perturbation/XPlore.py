@@ -899,7 +899,10 @@ class XPlore(Explainer):
 
             # copy original dataset features
 
-            base_features = (instance.node_features[:, :-self.num_structural_feat] if self.num_structural_feat > 0 else instance.node_features)
+            # num_node_labels = self.dataset.data.num_node_labels if getattr(self.dataset, "data", None) is not None else 0
+
+            base_features = (instance.node_features[:, :-(self.num_structural_feat)] if self.num_structural_feat > 0 else instance.node_features)
+            # base_features = (instance.node_features[:, :-(num_node_labels+self.num_structural_feat)] if self.num_structural_feat > 0 else instance.node_features)
             features_to_stack.append(base_features)
 
             # if any(dataset in self.dataset.name for dataset in self.CHEMICAL_DATASETS):

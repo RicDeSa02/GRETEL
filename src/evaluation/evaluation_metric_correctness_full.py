@@ -106,7 +106,7 @@ class CorrectnessFullMetric(EvaluationMetric):
 
         ged = self._ged.evaluate(instance_1, instance_2, oracle)
 
-        result = 1 if (label_instance_1 != label_instance_2) and (ged != 0) else 0
+        result = 1 if (label_instance_1 != label_instance_2) else 0
         # print(f"validity: {result}")
         
         return result
