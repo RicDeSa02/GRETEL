@@ -1043,8 +1043,8 @@ class XPlore(Explainer):
 
                 if not self.opt_flag: # [line 6]: if not v_bar_opt then
                     self.v_bar_opt = v_bar # [line 7]: v_bar_opt ← v_bar # First CF
-                    if not self.node_classification: tqdm.write(f"{Color.GREEN}Found valid counterfactual - {Color.CYAN}Counterfactual predicted class: {Color.GREEN}{g_v_bar_pred}{Color.CYAN} instead of {Color.MAGENTA}{self.f_v}{Color.RESET} | K: {self.k}")  # Debugging
-                    else: tqdm.write(f"{Color.GREEN}Found valid counterfactual [^node id:{self.node_id}] - {Color.CYAN}Counterfactual predicted class: {Color.GREEN}{g_v_bar_pred[self.node_id]}{Color.CYAN} instead of {Color.MAGENTA}{self.f_v[self.node_id]}{Color.RESET} | K: {self.k}")  # Debugging
+                    if not self.node_classification: self.context.logger.info(f"{Color.GREEN}Found valid counterfactual - {Color.CYAN}Counterfactual predicted class: {Color.GREEN}{g_v_bar_pred}{Color.CYAN} instead of {Color.MAGENTA}{self.f_v}{Color.RESET} | K: {self.k}")  # Debugging
+                    else: self.context.logger.info(f"{Color.GREEN}Found valid counterfactual [^node id:{self.node_id}] - {Color.CYAN}Counterfactual predicted class: {Color.GREEN}{g_v_bar_pred[self.node_id]}{Color.CYAN} instead of {Color.MAGENTA}{self.f_v[self.node_id]}{Color.RESET} | K: {self.k}")  # Debugging
                     self.edge_weights_opt = self.edge_weights
                     self.opt_flag = True # CF found
                     self.g_v = g_v_bar_pred
@@ -1054,8 +1054,8 @@ class XPlore(Explainer):
                 elif self.__distance(self.v[0], v_bar[0]) < self.__distance(self.v[0], self.v_bar_opt[0]): # [line 8]: else if d(v, v_bar) ≤ d(v, v_bar*) then
                     self.v_bar_opt = v_bar # [line 9]: v_bar* ← v_bar # Keep track of best CF
                     self.edge_weights_opt = self.edge_weights
-                    if not self.node_classification: tqdm.write(f"{Color.BLUE}Found new best counterfactual - {Color.CYAN}Counterfactual predicted class: {Color.RESET}{g_v_bar_pred} | K: {self.k}")  # Debugging
-                    else: tqdm.write(f"{Color.BLUE}Found new best counterfactual [^node id:{self.node_id}] - {Color.CYAN}Counterfactual predicted class: {Color.RESET}{g_v_bar_pred[self.node_id]} | K: {self.k}")  # Debugging
+                    if not self.node_classification: self.context.logger.info(f"{Color.BLUE}Found new best counterfactual - {Color.CYAN}Counterfactual predicted class: {Color.RESET}{g_v_bar_pred} | K: {self.k}")  # Debugging
+                    else: self.context.logger.info(f"{Color.BLUE}Found new best counterfactual [^node id:{self.node_id}] - {Color.CYAN}Counterfactual predicted class: {Color.RESET}{g_v_bar_pred[self.node_id]} | K: {self.k}")  # Debugging
                     self.g_v = g_v_bar_pred
                     self.new_CF = True
 

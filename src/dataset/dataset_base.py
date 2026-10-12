@@ -2,7 +2,7 @@ import pickle
 from typing import List
 import numpy as np
 
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, KFold
 
 from torch.utils.data import Subset
 from src.dataset.manipulators.base import BaseManipulator
@@ -141,8 +141,8 @@ class Dataset(Savable):
         _, class_counts = np.unique(labels, return_counts=True)
         
         n_splits = min(n_splits, min(class_counts))
-        
-        kf = StratifiedKFold(n_splits=n_splits, shuffle=shuffle)
+
+        kf = StratifiedKFold(n_splits=n_splits, shuffle=shuffle) if min(class_counts) > 1 else KFold(n_splits=max(2, min(n_splits, len(labels))), shuffle=shuffle)
         spl = kf.split([g for g in self.instances], labels)
         for train_index, test_index in spl:
             self.splits.append({'train': train_index.tolist(), 'test': test_index.tolist()})

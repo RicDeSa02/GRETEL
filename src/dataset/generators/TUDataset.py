@@ -78,7 +78,7 @@ class TUDataset(Generator):
             adj_matrix[instance.edge_index[0], instance.edge_index[1]] = 1.0 
 
             if adj_matrix.shape[0] == 0:
-                print(f"Skipping instance {id} with empty adjacency matrix.")
+                self.context.logger.info(f"Skipping instance {id} with empty adjacency matrix.")
                 continue
                 
             edge_features = None
