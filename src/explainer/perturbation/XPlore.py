@@ -295,12 +295,12 @@ class XPlore(Explainer):
 
             if self.update_node_feat: # (Two branches initialize identically)
                 if not self.change_node_feat: # Enable only discarding or adding of node features (node feature gating)
-                    self.P_node_hat = torch.ones(instance.node_features.shape, requires_grad=True) # Initialization of P_node_hat: Perturbation Matrix for Node Features
+                    self.P_node_hat = torch.zeros(instance.node_features.shape, requires_grad=True) # Initialization of P_node_hat: Perturbation Matrix for Node Features
                 elif self.change_node_feat: # Allow node features to change features
                     # self.P_node_hat = torch.tensor(instance.node_features, requires_grad=False) # Initialization Ⅰ of P_node_hat: Perturbation Matrix for Node Features. Init as node_features.
                     # self.P_node_hat[missing_nodefeatures] = self.γ_node_feat # Add node features where they are missing (0)
                     # self.P_node_hat.requires_grad_(True) # Enable backpropagation
-                    self.P_node_hat = torch.ones(instance.node_features.shape, requires_grad=True) # Initialization Ⅱ of P_node_hat: Perturbation Matrix for Node Features. Init as ones.
+                    self.P_node_hat = torch.zeros(instance.node_features.shape, requires_grad=True) # Initialization Ⅱ of P_node_hat: Perturbation Matrix for Node Features. Init as ones.
 
             # if self.debugging: print(f"P_init: {self.P_init}")
             self.P_sym = torch.zeros(instance.data.shape, dtype=torch.float64, requires_grad=False, device=self.device)
@@ -955,17 +955,17 @@ class XPlore(Explainer):
                 # Repeat previous steps for N_v_bar
                 N_sigmoid = torch.sigmoid(self.P_node_hat) # Threshold on sigmoid of P_node_hat
                 # N_sigmoid[:, -self.num_structural_feat:] = 1.0 # Structural features unchanged #XXX inplace operation cause issues with autograd
-                N_sigmoid = torch.cat([N_sigmoid[:, :-self.num_structural_feat], torch.ones_like(N_sigmoid[:, -self.num_structural_feat:])], dim=1) if self.num_structural_feat > 0 else N_sigmoid
+                N_sigmoid = torch.cat([N_sigmoid[:, :-self.num_structural_feat], torch.zeros_like(N_sigmoid[:, -self.num_structural_feat:])], dim=1) if self.num_structural_feat > 0 else N_sigmoid
                 mask = (N_sigmoid > threshold).float().clone() # Hard mask (> instead of >=)
                 N = N_sigmoid + (mask - N_sigmoid).detach() # Gradients can flow through N
 
-                self.N_v_bar = N * self.x # N ⊙ x
+                self.N_v_bar = N * (torch.ones_like(self.x) - 2 * self.x) + self.x # N ⊙ x
             else: # Allow node features to change freely
                 N_hat = self.P_node_hat.clone()
                 # N_sigmoid[:, -self.num_structural_feat:] = 1.0 # Structural features unchanged #XXX inplace operation cause issues with autograd
-                N_hat = torch.cat([N_hat[:, :-self.num_structural_feat], torch.ones_like(N_hat[:, -self.num_structural_feat:])], dim=1) if self.num_structural_feat > 0 else N_hat
+                N_hat = torch.cat([N_hat[:, :-self.num_structural_feat], torch.zeros_like(N_hat[:, -self.num_structural_feat:])], dim=1) if self.num_structural_feat > 0 else N_hat
                 # self.N_v_bar = self.P_node_hat # For initialization Ⅰ
-                self.N_v_bar = N_hat * self.x # N_hat ⊙ x (For initialization)
+                self.N_v_bar = N_hat + self.x # N_hat + x (For initialization)
         # else: # Keep same node features
             # self.N_v_bar = self.x.clone()
             # self.N_v_bar = self.x.clone().detach() # Feature vector for v [3.1]
@@ -1101,9 +1101,9 @@ class XPlore(Explainer):
         # 2. Distance loss: L_dist
         # Compute the number of edges removed (element-wise difference between A_v and A_v_bar) and the change in node features
         edge_diff = torch.abs(self.data - self.A_v_bar) # Element-wise absolute difference for edges
-        # node_diff = torch.abs(torch.tensor(instance.node_features) - self.N_v_bar) # Element-wise absolute difference for nodes features
+        node_diff = torch.abs(torch.tensor(instance.node_features) - self.N_v_bar) # Element-wise absolute difference for nodes features
         D_edges = edge_diff.sum() # L1-norm for edges: count the number of edges changed
-        # D_nodes = node_diff.sum() # L1-norm for nodes: distance between the node features changed
+        D_nodes = node_diff.sum() # L1-norm for nodes: distance between the node features changed
         D_nodes = 0
         L_dist = D_edges + D_nodes # Total L1-norm
 
