@@ -109,7 +109,7 @@ class C2Explainer(Explainer):
         # ADAPT to your instance class (here: dense adjacency in .data, features in .node_features)
         adj = torch.as_tensor(instance.data)
         edge_index = torch.nonzero(adj).T.long().to(device)
-        x = torch.as_tensor(instance.node_features).double().to(device)
+        x = torch.as_tensor(instance.node_features).float().to(device)
         return x, edge_index
 
     @staticmethod
@@ -240,13 +240,13 @@ class C2Explainer(Explainer):
             print(E_remain, E_delete, E_add)
 
         dev = x.device
-        self.orig_mask_remain = torch.ones(E_remain, device=dev, dtype=torch.double)
-        self.orig_mask_delete = torch.ones(E_delete, device=dev, dtype=torch.double)
-        self.orig_mask_add = torch.zeros(E_add, device=dev, dtype=torch.double)
+        self.orig_mask_remain = torch.ones(E_remain, device=dev, dtype=torch.float)
+        self.orig_mask_delete = torch.ones(E_delete, device=dev, dtype=torch.float)
+        self.orig_mask_add = torch.zeros(E_add, device=dev, dtype=torch.float)
 
         # random init in [-1, 1)
-        edge_mask_delete = torch.rand(E_delete, device=dev, dtype=torch.double) * 2 - 1
-        edge_mask_add = torch.rand(E_add, device=dev, dtype=torch.double) * 2 - 1
+        edge_mask_delete = torch.rand(E_delete, device=dev, dtype=torch.float) * 2 - 1
+        edge_mask_add = torch.rand(E_add, device=dev, dtype=torch.float) * 2 - 1
 
         self.edge_mask_delete = Parameter(edge_mask_delete)
         if not self.subgraph_mode:

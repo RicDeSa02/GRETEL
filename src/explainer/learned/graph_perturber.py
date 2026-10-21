@@ -78,6 +78,7 @@ class GraphPerturber(Perturber):
         self.P_x = Parameter(torch.zeros(self.num_nodes, self.num_features, device=self.device))
         
         # Graph's components
+        graph = graph.to(self.device)
         self.edge_index = graph.edge_index.to(self.device)
         self.x = graph.x.to(self.device)
         

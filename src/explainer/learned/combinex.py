@@ -32,7 +32,7 @@ class COMBINEX(Explainer):
             if torch.backends.mps.is_available()
             else "cpu"
         )
-        self.device = "cpu"
+        # self.device = "cpu"
         
         # Initialize best loss tracking
         self.best_loss = np.inf
@@ -123,8 +123,8 @@ class COMBINEX(Explainer):
             batch = graph.batch.to(self.device)
         
         # Forward pass through graph perturber
-        differentiable_output = self.graph_perturber.forward(graph.x.to(self.device), batch)
-        model_out, V_pert, EP_x = self.graph_perturber.forward_prediction(graph.x.to(self.device), batch)
+        differentiable_output = self.graph_perturber.forward(graph.x.float().to(self.device), batch)
+        model_out, V_pert, EP_x = self.graph_perturber.forward_prediction(graph.x.float().to(self.device), batch)
         
         # Get predictions
         y_pred_new_actual = torch.argmax(model_out, dim=1)

@@ -73,14 +73,15 @@ class TorchBase(Trainable):
         for epoch in range(self.epochs):
             losses, preds, labels_list = [], [], []
             self.model.train()
+            self.model.float()
             for batch in train_loader:
                 # print("batch.shape:", batch.batch.shape)
                 # print("unique graphs in batch:", batch.batch.unique())
                 batch = batch.to(self.device)
                 batch.batch = batch.batch.to(self.device)
-                node_features = batch.x.to(self.device)
+                node_features = batch.x.float().to(self.device)
                 edge_index = batch.edge_index.to(self.device)
-                edge_weights = batch.edge_attr.to(self.device)
+                edge_weights = batch.edge_attr.float().to(self.device)
                 labels = batch.y.to(self.device).long()
                 # print(f"labels at torch base: {labels[:5]}")
                 # print("labels dtype:", labels.dtype, "min:", labels.min().item(), "max:", labels.max().item())
@@ -110,7 +111,7 @@ class TorchBase(Trainable):
                         nodes = torch.arange(num_nodes)
                         
                         # Build full adjacency
-                        adj = torch.zeros((num_nodes, num_nodes), dtype=batch.x.dtype, device=batch.x.device)
+                        adj = torch.zeros((num_nodes, num_nodes), dtype=torch.flaot(), device=batch.x.device)
                         
                         # Original edges for this graph
                         graph_edge_mask = (batch.batch[batch.edge_index[0]] == i)
@@ -206,13 +207,14 @@ class TorchBase(Trainable):
             # check if we need to do early stopping
             if self.early_stopping_threshold and len(val_loader) > 0:
                 self.model.eval()
+                self.model.float()
                 var_losses, var_labels, var_preds = [], [], []
                 with torch.no_grad():
                     for batch in val_loader:
                         batch.batch = batch.batch.to(self.device)
-                        node_features = batch.x.to(self.device)
+                        node_features = batch.x.float().to(self.device)
                         edge_index = batch.edge_index.to(self.device)
-                        edge_weights = batch.edge_attr.to(self.device)
+                        edge_weights = batch.edge_attr.float().to(self.device)
                         labels = batch.y.to(self.device).long()
 
                         pred = self.model(node_features, edge_index, edge_weights, batch.batch)

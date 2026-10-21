@@ -175,6 +175,7 @@ class XPlore(Explainer):
         if self.visualize and instance.id != self.vis_id and self.vis_id != -1:
             return instance
 
+        self.oracle.model.float()
         self.oracle.model.eval()
         self.oracle.model.to(self.device)
 
@@ -194,7 +195,7 @@ class XPlore(Explainer):
 
         # first_nf = instance.node_features.copy()
 
-        self.data = torch.tensor(instance.data, dtype=torch.double, device=self.device)
+        self.data = torch.tensor(instance.data, dtype=torch.float32, device=self.device)
         self.batch = torch.zeros(instance.node_features.shape[0], dtype=torch.long, device=self.device)
 
         if not self.diffusion_flag:
@@ -206,7 +207,7 @@ class XPlore(Explainer):
             # print(instance.node_features.shape[0])
             # edge_index = torch.nonzero(self.data).int().T
             # edge_indices = torch.where(self.data != 0) # (int tensor)
-            # edge_weights = torch.tensor(self.data.clone().detach()[edge_indices], dtype=torch.double, device=self.device)
+            # edge_weights = torch.tensor(self.data.clone().detach()[edge_indices], dtype=torch.float32, device=self.device)
             # print(f"tuple edge_indices[0] shape: {edge_indices[0].shape}")
             # print(f"edge_weights shape: {edge_weights.shape}")
             # input()
@@ -224,7 +225,7 @@ class XPlore(Explainer):
             # print(f"edge_weights.shape: {edge_weights.shape}")
             # print(f"edge_weights: {edge_weights}")
 
-            # print(f"initial prediction model(instance): {torch.argmax(initial_logits := self.oracle.model(torch.tensor(instance.node_features, dtype=torch.float64),edge_index,edge_weights,None), dim=-1)}")
+            # print(f"initial prediction model(instance): {torch.argmax(initial_logits := self.oracle.model(torch.tensor(instance.node_features, dtype=torch.float32),edge_index,edge_weights,None), dim=-1)}")
             # print(f"initial_logits: {initial_logits}")
 
             self.adj_full = torch.ones_like(self.data)
@@ -242,12 +243,12 @@ class XPlore(Explainer):
             # self.f_v = self.oracle.predict(instance).clone().detach() # Get GCN prediction
             # print(f"initial prediction predict(instance): {self.f_v}")
             # print(type(self.f_v))
-            # self.f_v = torch.argmax(self.oracle.model(torch.tensor(instance.node_features, dtype=torch.float64, device=self.device),edge_index,edge_weights,None).clone().detach(), dim=-1).squeeze(-1) # Get GCN prediction
+            # self.f_v = torch.argmax(self.oracle.model(torch.tensor(instance.node_features, dtype=torch.float32, device=self.device),edge_index,edge_weights,None).clone().detach(), dim=-1).squeeze(-1) # Get GCN prediction
             # print(f"initial prediction model(instance): {self.f_v}")
             if self.diffusion_flag:
-                self.f_v = torch.argmax(self.predict_diffusion(torch.tensor(instance.node_features, dtype=torch.float64, device=self.device),edge_index_full,edge_weights_full), dim=-1).squeeze(-1) # Get diffusion prediction
+                self.f_v = torch.argmax(self.predict_diffusion(torch.tensor(instance.node_features, dtype=torch.float32, device=self.device),edge_index_full,edge_weights_full), dim=-1).squeeze(-1) # Get diffusion prediction
             else:
-                self.f_v = torch.argmax(self.oracle.model(torch.tensor(instance.node_features, dtype=torch.float64, device=self.device),edge_index_full,edge_weights_full,self.batch).clone().detach(), dim=-1).squeeze(-1) # Get GCN prediction
+                self.f_v = torch.argmax(self.oracle.model(torch.tensor(instance.node_features, dtype=torch.float32, device=self.device),edge_index_full,edge_weights_full,self.batch).clone().detach(), dim=-1).squeeze(-1) # Get GCN prediction
                 self.oracle._call_counter += 1
         # print(f"initial prediction model(instance_full): {self.f_v}")
         # input("XPlore stop here to check predictions")
@@ -266,11 +267,11 @@ class XPlore(Explainer):
         if self.debugging: print(f"{Color.YELLOW}Initial prediction (f_v): {Color.RESET}{self.f_v}") # Debugging
 
         # if not self.extended: # Use Base version of the explainer
-        #     self.A_v = torch.tensor(instance.data, dtype=torch.float64, device=self.device) # instance.data is the adjacency matrix
+        #     self.A_v = torch.tensor(instance.data, dtype=torch.float32, device=self.device) # instance.data is the adjacency matrix
         #     self.P_hat = torch.ones_like(self.A_v, requires_grad=False, device=self.device) # + noise_std * torch.randn_like(self.A_v) # Initialization of P_hat
             
         elif self.extended or True: # Use extended versione of the explainer (i.e. inverting the roles of A_v and P)
-            # self.A_v = torch.ones(instance.data.shape, dtype=torch.float64) # Assume adjacency matrix full of ones
+            # self.A_v = torch.ones(instance.data.shape, dtype=torch.float32) # Assume adjacency matrix full of ones
             
             self.A_v = torch.ones(int(N * (N+1) / 2), device=self.device)
 
@@ -280,7 +281,7 @@ class XPlore(Explainer):
             # missing_nodefeatures = np.where(instance.node_features == 0) # Missing node_features edges        
             
             # self.P_hat = torch.tensor(instance.data, requires_grad=False) # Initialization of P_hat: Perturbation Matrix for Edges
-            self.P_init = torch.ones_like(self.A_v, requires_grad=False, dtype=torch.float64, device=self.device) # Initialization of P_hat: Perturbation Matrix for Edges
+            self.P_init = torch.ones_like(self.A_v, requires_grad=False, dtype=torch.float32, device=self.device) # Initialization of P_hat: Perturbation Matrix for Edges
 
             # self.P_init[missing_edges] = self.γ_edges # (Adjacency matrix is full of ones) P stores the zero edges (their value is γ_edges)
             self.P_init[missing_edges_vec] = self.γ_edges # (Adjacency matrix is full of ones) P stores the zero edges (their value is γ_edges)
@@ -289,7 +290,7 @@ class XPlore(Explainer):
             self.P_init.requires_grad_(False) # Disable backpropagation
             # self.P_hat += noise_std * torch.rand_like(self.A_v)
 
-            self.A_v = torch.ones(instance.data.shape, dtype=torch.float64, device=self.device) # Assume adjacency matrix full of ones
+            self.A_v = torch.ones(instance.data.shape, dtype=torch.float32, device=self.device) # Assume adjacency matrix full of ones
 
             if self.debugging: print(f"P_init == instance.data: {torch.equal(self.P_init, torch.tensor(instance.data))}") # Debugging: γ_edges != 0 ←→ it prints False
 
@@ -303,7 +304,7 @@ class XPlore(Explainer):
                     self.P_node_hat = torch.zeros(instance.node_features.shape, requires_grad=True) # Initialization Ⅱ of P_node_hat: Perturbation Matrix for Node Features. Init as ones.
 
             # if self.debugging: print(f"P_init: {self.P_init}")
-            self.P_sym = torch.zeros(instance.data.shape, dtype=torch.float64, requires_grad=False, device=self.device)
+            self.P_sym = torch.zeros(instance.data.shape, dtype=torch.float32, requires_grad=False, device=self.device)
             i, j = np.triu_indices(N)
             self.P_sym[i,j] = self.P_init
             if self.directed:
@@ -318,25 +319,25 @@ class XPlore(Explainer):
         # if self.debugging: print(f"P_hat symmetrized: {self.P_hat}")
 
         # Node features
-        self.x = torch.tensor(instance.node_features, dtype=torch.float64, device=self.device) # Feature vector for v [3.1]
-        self.adj = torch.tensor(instance.data, dtype=torch.float64, device=self.device)
+        self.x = torch.tensor(instance.node_features, dtype=torch.float32, device=self.device) # Feature vector for v [3.1]
+        self.adj = torch.tensor(instance.data, dtype=torch.float32, device=self.device)
         self.v = (self.adj, self.x) # [3.1]
 
         # Edge features
-        self.e = torch.tensor(instance.edge_features, dtype=torch.float64) # Edge features vector
+        self.e = torch.tensor(instance.edge_features, dtype=torch.float32) # Edge features vector
         # Creating self.edge_features to store features for all possible edges. If edge is not present, its features are set to 1 for all dimensions.
         self.feat_dim = instance.edge_features.shape[1] # Extracting edge features dimansionality
-        self.edge_features = torch.zeros(instance.data.shape + (self.feat_dim,), dtype=torch.float64, requires_grad=False) # Edge features matrix for all possible edges (full of ones in each dimension)
+        self.edge_features = torch.zeros(instance.data.shape + (self.feat_dim,), dtype=torch.float32, requires_grad=False) # Edge features matrix for all possible edges (full of ones in each dimension)
         self.edge_indices = torch.where(torch.tensor(instance.data) != 0) # Indices of existing edges in Adjacency Matrix (integer tensor) 
         self.edge_features[self.edge_indices] = self.e # Assigning existing edge features
         self.edge_features = self.edge_features.squeeze(-1)
 
         # Graph features 
-        # self.g = torch.tensor(instance.graph_features, dtype=torch.float64) # Graph features
+        # self.g = torch.tensor(instance.graph_features, dtype=torch.float32) # Graph features
 
         if self.change_all_feat: # Allow all features to change freely (node, edge, graph features)
             # self.P_edge_hat = torch.ones(instance.edge_features.shape, requires_grad=True) # Initialization of P_edge_hat: Perturbation Matrix for Edge Features
-            self.P_edge_hat = torch.ones(instance.data.shape + (self.feat_dim, ), dtype=torch.float64, requires_grad=True) # Initialization of P_edge_hat: Perturbation Matrix for Edge Features
+            self.P_edge_hat = torch.ones(instance.data.shape + (self.feat_dim, ), dtype=torch.float32, requires_grad=True) # Initialization of P_edge_hat: Perturbation Matrix for Edge Features
             # self.P_graph_hat = torch.ones(instance.graph_features.shape, requires_grad=True) # Initialization of P_graph_hat: Perturbation Matrix for Graph Features
 
         self.v_bar_opt = (self.data, self.x) # Initializing optimal CF with the instance itself
@@ -353,13 +354,13 @@ class XPlore(Explainer):
                 MUTAG_VALENCE = {0: 4, 1: 3, 2: 2, 3: 1, 4: 1, 5: 1, 6: 1}  # C,N,O,F,I,Cl,Br
                 self.max_valence = torch.tensor(
                     [MUTAG_VALENCE.get(int(t), 4) for t in self.atom_label],
-                    dtype=torch.float64, device=self.device
+                    dtype=torch.float32, device=self.device
                 )
             else:
                 self.max_valence = None  # skip L_val
 
         self.n = instance.data.shape[0]
-        self.vel = torch.zeros((self.n, self.n), dtype=torch.float64, device=self.P_hat.device)
+        self.vel = torch.zeros((self.n, self.n), dtype=torch.float32, device=self.P_hat.device)
         self.ema = self.P_hat.data.clone()
         self.α = self.local_config['parameters']['alpha']
         # print(f"Initial learning rate: {self.α}")
@@ -408,10 +409,10 @@ class XPlore(Explainer):
 
             # reinitialize momentum + EMA if shape changed
             if not hasattr(self, "vel") or self.vel.shape != (self.n, self.n):
-                self.vel = torch.zeros((self.n, self.n), dtype=torch.float64, device=self.P_hat.device)
+                self.vel = torch.zeros((self.n, self.n), dtype=torch.float32, device=self.P_hat.device)
 
             if self.update_node_feat and (not hasattr(self, "vel_node") or self.vel_node.shape != self.x.shape):
-                self.vel_node = torch.zeros(self.x.shape, dtype=torch.float64, device=self.P_node_hat.device)
+                self.vel_node = torch.zeros(self.x.shape, dtype=torch.float32, device=self.P_node_hat.device)
 
             if not hasattr(self, "ema") or self.ema.shape != (self.n, self.n):
                 self.ema = self.P_hat.data.clone()
@@ -545,7 +546,7 @@ class XPlore(Explainer):
         # edge_features = self.edge_features[edge_indices].clone().detach().cpu().numpy() # Edge features for the existing edges (np.array)
 
         edge_indices = torch.as_tensor(torch.stack(torch.where(self.v_bar_opt[0] != 0)), device=self.device) # (int tensor)
-        edge_weights = self.v_bar_opt[0].clone().detach()[edge_indices].to(dtype=torch.double, device=self.device)
+        edge_weights = self.v_bar_opt[0].clone().detach()[edge_indices].to(dtype=torch.float32, device=self.device)
 
         if not self.opt_flag:
             self.v_bar_opt = (self.A_v_bar, self.v_bar_opt[1])
@@ -560,7 +561,7 @@ class XPlore(Explainer):
         # print(f"edge_indices.shape: {edge_indices.shape}")
         # edge_features = torch.tensor(instance.edge_features[edge_indices])
         # print(f"edge_features.shape: {edge_features.shape}")
-        # edge_features_full = torch.zeros(self.v_bar_opt[0].shape + (self.feat_dim,), dtype=torch.float64,)
+        # edge_features_full = torch.zeros(self.v_bar_opt[0].shape + (self.feat_dim,), dtype=torch.float32,)
         # print(f"edge_features_full.shape: {edge_features_full.shape}")
         # edge_features_full[edge_indices] = edge_features # features having also 0s for missing edges
         # edge_features_full = edge_features_full.flatten().clone().detach().cpu().numpy()
@@ -943,13 +944,13 @@ class XPlore(Explainer):
             
             node_features = np.hstack(features_to_stack)
             # print(f"node_features:\n{node_features.shape}"); input()
-            self.N_v_bar = torch.tensor(node_features, dtype=torch.float64, device=self.device)
+            self.N_v_bar = torch.tensor(node_features, dtype=torch.float32, device=self.device)
             # print(f"feature_map:\n{node_features}")
         else: # Keep same node features
             self.N_v_bar = self.x.clone().detach() # Feature vector for v [3.1]
             self.N_v_bar.requires_grad_(False) # Disable backpropagation
 
-
+        # XXX Normalize node features
         if self.update_node_feat: # Perturb node features
             if not self.change_node_feat: # Either discard or maintain the node feature (gating)
                 # Repeat previous steps for N_v_bar
@@ -987,7 +988,7 @@ class XPlore(Explainer):
             # print(f"self.E_v_bar_full shape: {self.E_v_bar_full.shape}")
 
 
-            # self.G_v_bar = torch.tensor(instance.graph_features, dtype=torch.float64)
+            # self.G_v_bar = torch.tensor(instance.graph_features, dtype=torch.float32)
             # self.G_v_bar.requires_grad_(False) # Disable backpropagation
         
         v_bar_cand = (self.A_v_bar, self.N_v_bar) # [line 3]: v_bar_cand ← (Ā_v, x)   
@@ -1158,8 +1159,8 @@ class XPlore(Explainer):
 
         # Initialize noisy labels
         B = 1
-        # y_t = torch.randn(B, self.oracle.dataset.num_classes, device=self.oracle.device, dtype=torch.double)
-        y_t = torch.zeros(B, self.oracle.dataset.num_classes, device=self.oracle.device, dtype=torch.double) # deterministic
+        # y_t = torch.randn(B, self.oracle.dataset.num_classes, device=self.oracle.device, dtype=torch.float32)
+        y_t = torch.zeros(B, self.oracle.dataset.num_classes, device=self.oracle.device, dtype=torch.float32) # deterministic
 
         betas, alphas, alphas_bar = self.oracle.get_noise_schedule(self.oracle.T)
 

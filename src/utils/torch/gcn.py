@@ -5,6 +5,8 @@ from torch_geometric.nn.conv import GCNConv
 from src.core.factory_base import build_w_params_string
 from src.utils.norms import GNNLayerNormed
 
+import torch
+
 class GCN(nn.Module):
    
     def __init__(self, node_features, num_conv_layers=2, conv_booster=1, pooling=MeanAggregation, use_weights=True):
@@ -42,24 +44,25 @@ class GCN(nn.Module):
             if use_weights:
                 # graph_convs.append(GCNConvWithEdgeTracking(in_channels=self.num_conv_layers[i][0],
                 #                       out_channels=self.num_conv_layers[i][1],
-                #                       add_self_loops=True).double())
+                #                       add_self_loops=True).float())
                 graph_convs.append(GNNLayerNormed(
                                     GCNConvWithEdgeTracking,
                                     in_dim=self.num_conv_layers[i][0],
                                     out_dim=self.num_conv_layers[i][1],
                                     norm="graphnorm",
-                                    add_self_loops=True).double())
+                                    add_self_loops=True).float())
             else:
                 graph_convs.append(GCNConv(in_channels=self.num_conv_layers[i][0],
                                       out_channels=self.num_conv_layers[i][1],
-                                      add_self_loops=True).double())
+                                      add_self_loops=True).float())
         graph_convs.append(self.pooling)
-        return nn.Sequential(*graph_convs).double()
+        return nn.Sequential(*graph_convs).float()
 
 class GCNConvWithEdgeTracking(GCNConv):
     def __init__(self, in_channels, out_channels, **kwargs):
         super().__init__(in_channels, out_channels, **kwargs)
-        self.residual = nn.Identity() if in_channels == out_channels else nn.Linear(in_channels, out_channels)
+        self.residual = nn.Identity() if in_channels == out_channels else nn.Linear(in_channels, out_channels, dtype=torch.float)
+        self.float()
 
     def forward(self, x, edge_index, edge_weight=None):
         out = super().forward(x, edge_index, edge_weight=edge_weight)

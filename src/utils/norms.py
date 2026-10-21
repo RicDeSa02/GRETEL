@@ -18,8 +18,8 @@ class GraphNorm(nn.Module):
     def __init__(self, hidden_dim, eps=1e-5):
         super().__init__()
         self.eps = eps
-        self.weight = nn.Parameter(torch.ones(hidden_dim))
-        self.bias   = nn.Parameter(torch.zeros(hidden_dim))
+        self.weight = nn.Parameter(torch.ones(hidden_dim, dtype=torch.float32))
+        self.bias   = nn.Parameter(torch.zeros(hidden_dim, dtype=torch.float32))
 
     def forward(self, x, batch):
         batch_size = int(batch.max().item() + 1)
@@ -52,11 +52,11 @@ class GNNLayerNormed(nn.Module):
 
         # normalization
         if norm == "graphnorm":
-            self.norm = GraphNorm(in_dim)
+            self.norm = GraphNorm(in_dim).float()
         elif norm == "layernorm":
-            self.norm = nn.LayerNorm(in_dim)
+            self.norm = nn.LayerNorm(in_dim).float()
         elif norm == "nodenorm":
-            self.norm = NodeNorm()
+            self.norm = NodeNorm().float()
         else:
             raise ValueError("unknown norm type")
 
@@ -64,12 +64,15 @@ class GNNLayerNormed(nn.Module):
         self.conv = ConvClass(in_dim, out_dim, **conv_kwargs)
 
         # residual projection if needed
-        self.res = nn.Identity() if in_dim == out_dim else nn.Linear(in_dim, out_dim)
+        self.res = nn.Identity() if in_dim == out_dim else nn.Linear(in_dim, out_dim, dtype=torch.float32)
 
     def forward(self, x, edge_index, edge_weight=None, batch=None, **kwargs):
         
         if batch is None:
             return x
+
+        if edge_weight is not None:
+            edge_weight = edge_weight.float()
 
         h = self.norm(x, batch)
         out = self.conv(h, edge_index, edge_weight, **kwargs)

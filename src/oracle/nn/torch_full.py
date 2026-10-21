@@ -20,9 +20,9 @@ class OracleTorch(TorchBase, Oracle):
         labels_list, preds = [], []
         for batch in loader:
             batch.batch = batch.batch.to(self.device)
-            node_features = batch.x.to(self.device)
+            node_features = batch.x.float().to(self.device)
             edge_index = batch.edge_index.to(self.device)
-            edge_weights = batch.edge_attr.to(self.device)
+            edge_weights = batch.edge_attr.float().to(self.device)
             labels = batch.y.to(self.device).long()
             
             self.optimizer.zero_grad()  
@@ -69,7 +69,7 @@ class OracleTorch(TorchBase, Oracle):
         # norm_pred = self.model(node_features,edge_index,edge_weights, batch).cpu().squeeze()
         # print(f"oracle normal prediction: {norm_pred}")
 
-        data = torch.tensor(data_inst.data, dtype=torch.double, device=self.device)
+        data = torch.tensor(data_inst.data, dtype=torch.float32, device=self.device)
         batch = torch.zeros(data_inst.node_features.shape[0], dtype=torch.long, device=self.device)
         edge_indices = torch.where(data != 0) # (int tensor)
         edge_weights = data.detach().clone()[edge_indices[0], edge_indices[1]]        
@@ -79,7 +79,7 @@ class OracleTorch(TorchBase, Oracle):
         edge_weights_full = edge_weights_full.flatten()
         edge_index_full = adj_full.nonzero(as_tuple=False).T
 
-        full_pred = self.model(torch.tensor(data_inst.node_features, dtype=torch.float64, device=self.device),edge_index_full,edge_weights_full,batch).cpu().squeeze()
+        full_pred = self.model(torch.tensor(data_inst.node_features, dtype=torch.float32, device=self.device),edge_index_full,edge_weights_full,batch).cpu().squeeze()
         # print(f"oracle full prediction:{full_pred}")
         # input("oracle full prediciton")
         return full_pred

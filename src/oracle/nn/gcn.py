@@ -60,4 +60,4 @@ class DownstreamGCN(GCN):
         #downstream_layers.append(nn.Sigmoid())
         #downstream_layers.append(nn.Softmax())
         # put the linear layers in sequential
-        return nn.Sequential(*downstream_layers).double()
+        return nn.Sequential(*downstream_layers).float()
