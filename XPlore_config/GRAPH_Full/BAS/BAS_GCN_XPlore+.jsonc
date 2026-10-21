@@ -16,16 +16,16 @@
             "parameters": {
                 "generator": {
                     "class": "src.dataset.generators.bashapes.BAShapes",
-                    "parameters": { "num_instances": 5000, "nodes_num": 64, "edges_per_node": 1}
+                    "parameters": { "num_instances": 5000, "nodes_num": 32, "edges_per_node": 1}
                 } 
             }
         },
         "oracle": {
             "class": "src.oracle.nn.torch_full.OracleTorch",
             "parameters": {
-                "epochs": 100,
+                "epochs": 10,
                 "batch_size": 32,
-                "device": "cpu",
+                "device": "cuda",
                 "optimizer": {
                     "class": "torch.optim.RMSprop",
                     "parameters": {

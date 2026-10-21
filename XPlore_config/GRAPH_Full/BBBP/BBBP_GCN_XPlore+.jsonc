@@ -20,9 +20,9 @@
             "oracle": {
                 "class": "src.oracle.nn.torch_full.OracleTorch",
                 "parameters": {
-                    "epochs": 1000,
+                    "epochs": 300,
                     "batch_size": 64,
-                    "device": "cpu",
+                    "device": "cuda",
                     "optimizer": {
                         "class": "torch.optim.RMSprop",
                         "parameters": {

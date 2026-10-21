@@ -19,7 +19,7 @@
             "parameters": {
                 "generator": {
                     "class": "src.dataset.generators.treegrid.TreeGrid",
-                    "parameters": { "num_instances": 5000, "tree_height": 6, "grid_size": 3}
+                    "parameters": { "num_instances": 5000, "tree_height": 5, "grid_size": 3}
                 } 
             }
         },
