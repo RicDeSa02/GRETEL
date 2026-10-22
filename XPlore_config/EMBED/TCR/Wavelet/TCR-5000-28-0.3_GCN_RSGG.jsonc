@@ -1,6 +1,6 @@
 {  
     "experiment" : {
-        "scope": "EMBED/TCR/RSGG",
+        "scope": "EMBED/TCR/WaveletCharacteristic/RSGG",
         "parameters" : {
             "lock_release_tout":120,
             "propagate":[

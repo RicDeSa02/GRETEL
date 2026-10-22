@@ -1,6 +1,6 @@
 {  
     "experiment" : {
-        "scope": "EMBED/TCR/CLEAR",
+        "scope": "EMBED/TCR/Wavelet/CLEAR",
         "parameters" : {
             "lock_release_tout":120,
             "propagate":[

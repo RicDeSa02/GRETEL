@@ -1,6 +1,6 @@
 {  
     "experiment" : {
-        "scope": "EMBED/TCR/D4Explainer",
+        "scope": "EMBED/TCR/WaveletCharacteristic/D4Explainer",
         "parameters" : {
             "lock_release_tout":120,
             "propagate":[

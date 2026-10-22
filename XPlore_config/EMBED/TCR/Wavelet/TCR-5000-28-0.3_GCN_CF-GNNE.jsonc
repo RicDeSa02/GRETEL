@@ -1,6 +1,6 @@
 {  
     "experiment" : {
-        "scope": "EMBED/TCR/CFGNNE",
+        "scope": "EMBED/TCR/WaveletCharacteristic/CFGNNE",
         "parameters" : {
             "lock_release_tout":120,
             "propagate":[

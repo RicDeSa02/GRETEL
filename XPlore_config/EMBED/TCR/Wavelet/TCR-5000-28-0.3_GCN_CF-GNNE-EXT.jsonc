@@ -1,6 +1,6 @@
 {  
     "experiment" : {
-        "scope": "EMBED/TCR/XPlore",
+        "scope": "EMBED/TCR/WaveletCharacteristic/XPlore",
         "parameters" : {
             "lock_release_tout":120,
             "propagate":[
