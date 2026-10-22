@@ -12,3 +12,4 @@ python main.py XPlore_config\GRAPH_Full\TCR\TCR_GCN_RSGG-CE.jsonc
 python main.py XPlore_config\GRAPH_Full\TCR\TCR-5000-28-0.3_GCN_XPlore.jsonc
 python main.py XPlore_config\GRAPH_Full\TCR\TCR-5000-28-0.3_GCN_XPlore+.jsonc
 python main.py XPlore_config\GRAPH_Full\TCR\TCR-5000-28-0.3_GCN_XPlore++.jsonc
+python main.py XPlore_config\GRAPH_Full\TCR\TCR_GCN_XPlore@.jsonc
