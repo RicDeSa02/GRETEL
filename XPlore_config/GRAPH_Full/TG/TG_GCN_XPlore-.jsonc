@@ -1,6 +1,6 @@
 {  
     "experiment" : {
-        "scope": "GRAPH/BAS/XPlore@",
+        "scope": "GRAPH/TG/XPlore-",
         "parameters" : {
             "lock_release_tout":120,
             "propagate":[
@@ -15,17 +15,17 @@
             "class": "src.dataset.dataset_base.Dataset",
             "parameters": {
                 "generator": {
-                    "class": "src.dataset.generators.bashapes.BAShapes",
-                    "parameters": { "num_instances": 5000, "nodes_num": 32, "edges_per_node": 1}
+                    "class": "src.dataset.generators.treegrid.TreeGrid",
+                    "parameters": { "num_instances": 5000, "tree_height": 5, "grid_size": 3}
                 } 
             }
         },
         "oracle": {
-            "class": "src.oracle.nn.torch_full.OracleTorch",
+            "class": "",
             "parameters": {
-                "epochs": 10,
-                "batch_size": 32,
+                "epochs": 20,
                 "device": "cuda",
+                "batch_size": 32,
                 "optimizer": {
                     "class": "torch.optim.RMSprop",
                     "parameters": {
@@ -44,25 +44,24 @@
                     "num_conv_layers":3,
                     "num_dense_layers":1,
                     "conv_booster":2,
-                    "linear_decay":1.8,
-                    "use_weights": true
+                    "linear_decay":1.8
                 }
               } 
             }   
         }
       }
-    ],
-    "explainers": [
-      {"class": "src.explainer.perturbation.XPlore.XPlore",
+    ],    
+    "explainers": [{
+      "class": "src.explainer.perturbation.XPlore.XPlore",
       "parameters": {
-        "alpha": 0.1,
-        "K": 500,
-        "beta": 0.5,
-        "extended": false,
-        "gamma_edge": 0,      
+        "alpha": 0.1, 
+        "K": 500, 
+        "beta": 0.5, 
+        "extended": false, 
+        "gamma_edge": 0,
         "update_node_feat": true,
-        "change_node_feat": true,
-        "gamma_node_feat": 0,
+        "change_node_feat": false, 
+        "gamma_node_feat": 0.01, 
         "visualize": false,
         "boost_alpha": true}}],
     "compose_mes" : "config/snippets/metrics_fully_connected.json",

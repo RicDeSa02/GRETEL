@@ -260,7 +260,7 @@ class XPlore(Explainer):
 
             if self.update_node_feat: # (Two branches initialize identically)
                 if not self.change_node_feat: # Enable only discarding or adding of node features (node feature gating)
-                    self.P_node_hat = - torch.ones(instance.node_features.shape, requires_grad=True, device=self.device) # Initialization of P_node_hat: Perturbation Matrix for Node Features
+                    self.P_node_hat = (- torch.ones(instance.node_features.shape, requires_grad=False, device=self.device)).requires_grad_(True) # Initialization of P_node_hat: Perturbation Matrix for Node Features
                 elif self.change_node_feat: # Allow node features to change features
                     # self.P_node_hat = torch.tensor(instance.node_features, requires_grad=False) # Initialization Ⅰ of P_node_hat: Perturbation Matrix for Node Features. Init as node_features.
                     # self.P_node_hat[missing_nodefeatures] = self.γ_node_feat # Add node features where they are missing (0)
@@ -282,7 +282,7 @@ class XPlore(Explainer):
         # self.P_hat.requires_grad_(True) # Enable backpropagation
         # # if self.debugging: print(f"P_hat symmetrized: {self.P_hat}")
 
-        self.P_hat = - torch.ones_like(self.A_v, requires_grad=False, dtype=torch.float32, device=self.device)
+        self.P_hat = (- torch.ones_like(self.A_v, requires_grad=False, dtype=torch.float32, device=self.device)).requires_grad_(True)
 
         # Node features
         self.x = torch.tensor(instance.node_features, dtype=torch.float32, device=self.device) # Feature vector for v [3.1]

@@ -1,6 +1,6 @@
 {  
     "experiment" : {
-        "scope": "GRAPH/TG/XPlore@",
+        "scope": "GRAPH/TG/XPlore--",
         "parameters" : {
             "lock_release_tout":120,
             "propagate":[

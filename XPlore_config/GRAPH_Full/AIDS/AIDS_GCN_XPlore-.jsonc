@@ -1,6 +1,6 @@
 {  
     "experiment": {
-        "scope": "GRAPH/AIDS/XPlore@",
+        "scope": "GRAPH/AIDS/XPlore-",
         "parameters": {
             "lock_release_tout":120,
             "propagate":[
@@ -64,7 +64,7 @@
                 "extended": false,
                 "gamma_edge": 0,
                 "update_node_feat": true,
-                "change_node_feat": true,
+                "change_node_feat": false,
                 "gamma_node_feat": 0, 
                 "visualize": false,
                 "boost_alpha": true
