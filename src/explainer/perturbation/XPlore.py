@@ -24,7 +24,8 @@ class XPlore(Explainer):
     https://arxiv.org/abs/2102.03322
     Algorithm: given a graph G = (AG, X) where f (G) = y, generate the minimal perturbation,  ̄G = (ĀG, X), such that f (̄G) ≠ y. [5.4]
     '''
-    
+
+    #region init
     def init(self):
         """
         α: Learning Rate, K: Number of iterations, β: Loss controll (Ldist wrt Lpred) (Eq.1 [4]), γ_edges: Missing edges addition fraction (per edge)
@@ -54,8 +55,12 @@ class XPlore(Explainer):
         self.boost_α = local_params['boost_alpha'] # Wheter to decay learning rate (α) during explainer iterations
         self.directed = local_params['directed'] # Wheter the graph is directed or undirected
         self.device = local_params['device']
-        self.chem_flag = local_params.get('chem_flag', False)    
+        self.chem_flag = local_params.get('chem_flag', False)   
 
+        # Node Features stats for normalization
+        X = torch.cat([torch.as_tensor(g.node_features) for g in self.dataset.instances])     # [N*total_nodes, F]
+        std = X.std(dim=0) # .clamp_min(1e-8).to(self.device)   
+        self.feat_std = torch.where(std < 1e-6, torch.ones_like(std), std).to(self.device) # [F], 1 for constant features, avoid blowup in distance computation
 
         if not self.multi_label_classification:
             # self.loss_fn = torch.nn.BCELoss() # useless as model outputs more than one logits
@@ -162,6 +167,7 @@ class XPlore(Explainer):
                
         self.fold_id = self.local_config['parameters'].get('fold_id',-1)
 
+    #region Explain
     def explain(self, instance):
         """
         Find a Counterfactual for ```instance```. The closest among the ones found will be returned.
@@ -194,7 +200,8 @@ class XPlore(Explainer):
 
         if not self.diffusion_flag:
             self.f_v = self.oracle.predict(instance).clone().detach().to(self.device) # Get GCN prediction
-        
+
+        #region Diffusion flag
         elif self.diffusion_flag:
             # edge_index = torch.nonzero(self.data).int().T
             # edge_indices = torch.where(self.data != 0) # (int tensor)
@@ -258,6 +265,7 @@ class XPlore(Explainer):
 
             if self.debugging: print(f"P_init == instance.data: {torch.equal(self.P_init, torch.tensor(instance.data))}") # Debugging: γ_edges != 0 ←→ it prints False
 
+            #region Node Features perturbation init
             if self.update_node_feat: # (Two branches initialize identically)
                 if not self.change_node_feat: # Enable only discarding or adding of node features (node feature gating)
                     self.P_node_hat = (- torch.ones(instance.node_features.shape, requires_grad=False, device=self.device)).requires_grad_(True) # Initialization of P_node_hat: Perturbation Matrix for Node Features
@@ -282,7 +290,8 @@ class XPlore(Explainer):
         # self.P_hat.requires_grad_(True) # Enable backpropagation
         # # if self.debugging: print(f"P_hat symmetrized: {self.P_hat}")
 
-        self.P_hat = (- torch.ones_like(self.A_v, requires_grad=False, dtype=torch.float32, device=self.device)).requires_grad_(True)
+        #region Adjacency Perturbation init
+        self.P_hat = (- torch.ones_like(self.A_v, requires_grad=False, dtype=torch.float32, device=self.device)).requires_grad_(True) # make it a leaf tensor
 
         # Node features
         self.x = torch.tensor(instance.node_features, dtype=torch.float32, device=self.device) # Feature vector for v [3.1]
@@ -300,7 +309,8 @@ class XPlore(Explainer):
 
         # Graph features 
         # self.g = torch.tensor(instance.graph_features, dtype=torch.float32) # Graph features
-
+        
+        #region Edge Features Perturbation init
         if self.change_all_feat: # Allow all features to change freely (node, edge, graph features)
             # self.P_edge_hat = torch.ones(instance.edge_features.shape, requires_grad=True) # Initialization of P_edge_hat: Perturbation Matrix for Edge Features
             self.P_edge_hat = torch.ones(instance.data.shape + (self.feat_dim, ), dtype=torch.float32, requires_grad=True) # Initialization of P_edge_hat: Perturbation Matrix for Edge Features
@@ -568,6 +578,7 @@ class XPlore(Explainer):
             else: print(f"{Color.RED}CF not found{Color.RESET}, original: {Color.MAGENTA}{self.f_v[self.node_id]} [^node id: {self.node_id}]{Color.RESET}")
             return instance
 
+        #region Chemical Validity check
         if self.chem_flag:
             # Chemical validity check
             # Dataset-specific atom type maps
@@ -718,7 +729,7 @@ class XPlore(Explainer):
 
         return v_bar_opt_GI
 
-
+    #region get CF example
     def __get_CF_example(self, instance):
         """
         Compute the CF for ```instance```.
@@ -726,13 +737,15 @@ class XPlore(Explainer):
         lines in brackes '[line 0]' refer to lines of pseudo code in the paper.
         """
         # [line 1]: P ← threshold(σ(P_hat))
-        self.temperature *= self.temperature
+        # self.temperature *= self.temperature
         P_sigmoid = torch.sigmoid(self.P_hat / self.temperature) # Threshold on sigmoid of P_hat
         threshold = 0.5 # if self.extended else .5 # NOTE This equals CF-GNNExplainer using a threshold of 0.5 on original P_hat
+        # STE
         mask = (P_sigmoid >= threshold).float() # Hard mask
         # P = P_sigmoid + (mask - P_sigmoid).clone().detach() # Gradients can flow through P
         P = mask + (P_sigmoid - P_sigmoid.clone().detach()) # Gradients can flow through P
 
+        # EDGE FLIP GATE - Eq. (4)
         # self.A_v_bar = P * self.A_v # [line 2]: Ā_v = P ⊙ A_v
         self.A_v_bar = self.A_v + P * (1 - 2 * self.A_v)
 
@@ -825,17 +838,18 @@ class XPlore(Explainer):
         else: # Keep same node features
             self.N_v_bar = self.x.clone().detach() # Feature vector for v [3.1]
             self.N_v_bar.requires_grad_(False) # Disable backpropagation
-
-        # XXX Normalize node features
+ 
         if self.update_node_feat: # Perturb node features
             if not self.change_node_feat: # Either discard or maintain the node feature (gating)
                 # Repeat previous steps for N_v_bar
                 N_sigmoid = torch.sigmoid(self.P_node_hat) # Threshold on sigmoid of P_node_hat
                 # N_sigmoid[:, -self.num_structural_feat:] = 1.0 # Structural features unchanged #XXX inplace operation cause issues with autograd
                 N_sigmoid = torch.cat([N_sigmoid[:, :-self.num_structural_feat], torch.zeros_like(N_sigmoid[:, -self.num_structural_feat:])], dim=1) if self.num_structural_feat > 0 else N_sigmoid
+                # STE
                 mask = (N_sigmoid > threshold).float().clone() # Hard mask (> instead of >=)
                 N = N_sigmoid + (mask - N_sigmoid).detach() # Gradients can flow through N
 
+                # NODE FEATURE FLIP GATE
                 self.N_v_bar = N * (torch.ones_like(self.x) - 2 * self.x) + self.x # N ⊙ x
             else: # Allow node features to change freely
                 N_hat = self.P_node_hat.clone()
@@ -865,7 +879,7 @@ class XPlore(Explainer):
             # self.G_v_bar = torch.tensor(instance.graph_features, dtype=torch.float32)
             # self.G_v_bar.requires_grad_(False) # Disable backpropagation
         
-        v_bar_cand = (self.A_v_bar, self.N_v_bar) # [line 3]: v_bar_cand ← (Ā_v, x)   
+        v_bar_cand = (self.A_v_bar, self.N_v_bar)   
         
         # Computing f(v_bar_cand)
         if self.diffusion_flag:
@@ -918,6 +932,7 @@ class XPlore(Explainer):
 
         return
 
+    #region Loss
     def __calculate_loss(self, instance):
         """
         Loss function based on:
@@ -956,11 +971,12 @@ class XPlore(Explainer):
         # 2. Distance loss: L_dist
         # Compute the number of edges removed (element-wise difference between A_v and A_v_bar) and the change in node features
         edge_diff = torch.abs(self.data - self.A_v_bar) # Element-wise absolute difference for edges
-        node_diff = torch.abs(torch.tensor(instance.node_features, device=self.device) - self.N_v_bar) # Element-wise absolute difference for nodes features
-        D_edges = edge_diff.sum() # L1-norm for edges: count the number of edges changed
-        D_nodes = node_diff.sum() # L1-norm for nodes: distance between the node features changed
-        D_nodes = 0
+        node_diff = torch.abs(torch.tensor(instance.node_features, device=self.device) - self.N_v_bar) / self.feat_std # Element-wise absolute difference for nodes features. Normalized by dataset std
+        D_edges = edge_diff.mean() # L1-norm for edges: count the number of edges changed
+        D_nodes = node_diff.mean() # L1-norm for nodes: distance between the node features changed
+        # D_nodes = 0
         L_dist = D_edges + D_nodes # Total L1-norm
+
 
         # Chemical loss
         if self.chem_flag:   
@@ -968,11 +984,10 @@ class XPlore(Explainer):
             connectivity_penalty = self.__connectivity_penalty()
             total_loss = - L_pred - (self.β * L_dist + 0.1 * valence_penalty + 0.5 * connectivity_penalty) # NOTE here we do - NLL (normal BCE)
 
-
         else:
             # 3. Total loss
             # NOTE we want to flip the prediction. By doing gradient ascent we want to maximize the loss on the logits to produce misclassification. Distance is negative since we want to go in the direction of negative distance i.e., closeness.
-            total_loss = - L_pred - (self.β * L_dist) # NOTE here we do - NLL (normal BCE)
+            total_loss = - L_pred - (self.β * L_dist) # NOTE here we do -NLL (normal BCE)
             # total_loss = - (L_pred_margin - self.β * L_dist)
         
         # return L_pred
