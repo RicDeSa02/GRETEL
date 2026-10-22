@@ -21,7 +21,7 @@ class TreeGrid(Generator):
         assert ((isinstance(self.num_instances, int)) and self.num_instances >= 1)
         assert ((isinstance(self.tree_height, float) or isinstance(self.tree_height, int)) and self.tree_height >= 1)
         assert ((isinstance(self.grid_size, float) or isinstance(self.grid_size, int)) and self.grid_size >= 1 or isinstance(self.grid_size, tuple))
-        assert ((2**(self.tree_height + 1) - 1) > self.grid_size[0]*self.grid_size[1])
+        assert ((2**self.tree_height) > self.grid_size[0]*self.grid_size[1])
 
         self.generate_dataset()
 
@@ -44,7 +44,7 @@ class TreeGrid(Generator):
             # Randomly determine if the graph is going to contain a TreeGrid or just a tree
             has_treegrid = self.rng.integers(0, 2)  # 2 excluded
             graph_seed = int(self.rng.integers(0, 2**32 - 1))
-            num_nodes = 2**(self.tree_height + 1) - 1  # Number of nodes in the tree
+            num_nodes = 2**(self.tree_height)  # Number of nodes in the tree
             
             if has_treegrid: # Generate grid and tree
 

@@ -52,11 +52,8 @@ class XPlore(Explainer):
         self.dataset_classes = local_params['dataset_classes'] # Dataset classes/labels amount
         self.node_classification = local_params['node_classification'] # Whether to apply node classification
         self.boost_α = local_params['boost_alpha'] # Wheter to decay learning rate (α) during explainer iterations
-        # print(f"self.boost_α: {self.boost_α}")
-        # print(f"learning rate: {self.α}")
         self.directed = local_params['directed'] # Wheter the graph is directed or undirected
         self.device = local_params['device']
-        print(f"self.oracle.device: {self.oracle.device}")
         self.chem_flag = local_params.get('chem_flag', False)    
 
 
@@ -67,7 +64,6 @@ class XPlore(Explainer):
         else: # Multi-Label Classification
             self.loss_fn = torch.nn.BCEWithLogitsLoss() # use for Multi-Label Classification   
 
-        # print(f"self.oracle.__class__: {self.oracle.__class__}")
         self.diffusion_flag = True if isinstance(self.oracle, src.oracle.nn.torch_diffusion.OracleTorch) else False
 
         assert ((isinstance(self.K, float) or isinstance(self.K, int)) and self.K >= 1)
@@ -85,15 +81,15 @@ class XPlore(Explainer):
         assert (isinstance(self.node_classification, bool))
         assert (isinstance(self.dataset_classes, int))
 
-        if not self.extended:
-            self.update_node_feat = False
-            self.change_node_feat = False
-            self.change_all_feat = False
-        elif not self.update_node_feat:
-            self.change_node_feat = False
-            self.change_all_feat = False
-        elif not self.change_node_feat:
-            self.change_all_feat = False
+        # if not self.extended:
+        #     self.update_node_feat = False
+        #     self.change_node_feat = False
+        #     self.change_all_feat = False
+        # elif not self.update_node_feat:
+        #     self.change_node_feat = False
+        #     self.change_all_feat = False
+        # elif not self.change_node_feat:
+        #     self.change_all_feat = False
 
     def check_configuration(self):
         super().check_configuration()
@@ -185,9 +181,7 @@ class XPlore(Explainer):
         #     ff"dataset: {self.dataset.dataset_name} - {version}")
         # except:
         #     print(f"dataset: Unknown - {version}")
-        # print("num_classes =", self.dataset.num_classes)
         
-        # print(instance.data.shape)
         # if self.diffusion_flag:
         #     self.f_v = self._real_predict_diffusion(instance).clone().detach()
         # else:
@@ -199,34 +193,16 @@ class XPlore(Explainer):
         self.batch = torch.zeros(instance.node_features.shape[0], dtype=torch.long, device=self.device)
 
         if not self.diffusion_flag:
-            # print(f"true label: {instance.label}")
-            self.f_v = self.oracle.predict(instance).clone().detach() # Get GCN prediction
-            # print(f"initial prediction predict(instance): {self.oracle.predict(instance).clone().detach()}")
+            self.f_v = self.oracle.predict(instance).clone().detach().to(self.device) # Get GCN prediction
         
         elif self.diffusion_flag:
-            # print(instance.node_features.shape[0])
             # edge_index = torch.nonzero(self.data).int().T
             # edge_indices = torch.where(self.data != 0) # (int tensor)
             # edge_weights = torch.tensor(self.data.clone().detach()[edge_indices], dtype=torch.float32, device=self.device)
-            # print(f"tuple edge_indices[0] shape: {edge_indices[0].shape}")
-            # print(f"edge_weights shape: {edge_weights.shape}")
             # input()
             edge_indices = torch.where(self.data != 0) # (int tensor)
             edge_weights = self.data.detach().clone()[edge_indices[0], edge_indices[1]]
-            # print(f"edge_indices[0] shape: {edge_indices[0].shape}")
-            # print(f"edge_weights shape: {edge_weights.shape}")
             # input()
-
-            # print(f"instance.node_features.shape: {instance.node_features.shape}")
-            # print(f"edge_index.shape: {edge_index.shape}")
-            # print(f"initial edge_index: {edge_index}")
-            # print(f"instance.edge_weights.shape: {instance.edge_weights.shape}")
-            # print(f"instance.edge_weights: {instance.edge_weights}")
-            # print(f"edge_weights.shape: {edge_weights.shape}")
-            # print(f"edge_weights: {edge_weights}")
-
-            # print(f"initial prediction model(instance): {torch.argmax(initial_logits := self.oracle.model(torch.tensor(instance.node_features, dtype=torch.float32),edge_index,edge_weights,None), dim=-1)}")
-            # print(f"initial_logits: {initial_logits}")
 
             self.adj_full = torch.ones_like(self.data)
             # edge_indices = np.where(instance.data != 0)
@@ -236,28 +212,15 @@ class XPlore(Explainer):
             edge_weights_full = edge_weights_full.flatten()
             edge_index_full = self.adj_full.nonzero(as_tuple=False).T
 
-            # print(f"self.adj_full shape: {self.adj_full.shape}")
-            # print(f"edge_weights_full shape: {edge_weights_full.shape}")
             # input("enter to continue")
 
             # self.f_v = self.oracle.predict(instance).clone().detach() # Get GCN prediction
-            # print(f"initial prediction predict(instance): {self.f_v}")
-            # print(type(self.f_v))
             # self.f_v = torch.argmax(self.oracle.model(torch.tensor(instance.node_features, dtype=torch.float32, device=self.device),edge_index,edge_weights,None).clone().detach(), dim=-1).squeeze(-1) # Get GCN prediction
-            # print(f"initial prediction model(instance): {self.f_v}")
             if self.diffusion_flag:
                 self.f_v = torch.argmax(self.predict_diffusion(torch.tensor(instance.node_features, dtype=torch.float32, device=self.device),edge_index_full,edge_weights_full), dim=-1).squeeze(-1) # Get diffusion prediction
             else:
                 self.f_v = torch.argmax(self.oracle.model(torch.tensor(instance.node_features, dtype=torch.float32, device=self.device),edge_index_full,edge_weights_full,self.batch).clone().detach(), dim=-1).squeeze(-1) # Get GCN prediction
                 self.oracle._call_counter += 1
-        # print(f"initial prediction model(instance_full): {self.f_v}")
-        # input("XPlore stop here to check predictions")
-
-
-        # print(type(self.f_v))
-        # print(f"initial prediction (instance_GI): {self.oracle.predict(instance_GI).clone().detach()}")
-        # input()
-        # return instance
 
         # self.f_v = torch.tensor(self.oracle.predict(instance), dtype=torch.long) # Get GCN prediction
         self.g_v = self.f_v # CF predicted class
@@ -273,50 +236,53 @@ class XPlore(Explainer):
         elif self.extended or True: # Use extended versione of the explainer (i.e. inverting the roles of A_v and P)
             # self.A_v = torch.ones(instance.data.shape, dtype=torch.float32) # Assume adjacency matrix full of ones
             
-            self.A_v = torch.ones(int(N * (N+1) / 2), device=self.device)
+            # self.A_v = torch.ones(int(N * (N+1) / 2), device=self.device)
 
             # missing_edges = np.where(instance.data == 0) # Missing A_v edges
-            missing_edges_triu = torch.tensor(instance.data == 0).triu().nonzero().t()
-            missing_edges_vec = (missing_edges_triu[0] * N + missing_edges_triu[1] - missing_edges_triu[0] * (missing_edges_triu[0]+1) / 2).int()
+            # missing_edges_triu = torch.tensor(instance.data == 0).triu().nonzero().t()
+            # missing_edges_vec = (missing_edges_triu[0] * N + missing_edges_triu[1] - missing_edges_triu[0] * (missing_edges_triu[0]+1) / 2).int()
             # missing_nodefeatures = np.where(instance.node_features == 0) # Missing node_features edges        
             
             # self.P_hat = torch.tensor(instance.data, requires_grad=False) # Initialization of P_hat: Perturbation Matrix for Edges
-            self.P_init = torch.ones_like(self.A_v, requires_grad=False, dtype=torch.float32, device=self.device) # Initialization of P_hat: Perturbation Matrix for Edges
+            # self.P_init = torch.ones_like(self.A_v, requires_grad=False, dtype=torch.float32, device=self.device) # Initialization of P_hat: Perturbation Matrix for Edges
 
             # self.P_init[missing_edges] = self.γ_edges # (Adjacency matrix is full of ones) P stores the zero edges (their value is γ_edges)
-            self.P_init[missing_edges_vec] = self.γ_edges # (Adjacency matrix is full of ones) P stores the zero edges (their value is γ_edges)
+            # self.P_init[missing_edges_vec] = self.γ_edges # (Adjacency matrix is full of ones) P stores the zero edges (their value is γ_edges)
 
-            self.P_init += noise_std * torch.randn_like(self.A_v)
-            self.P_init.requires_grad_(False) # Disable backpropagation
+            # self.P_init += noise_std * torch.randn_like(self.A_v)
+            # self.P_init.requires_grad_(False) # Disable backpropagation
             # self.P_hat += noise_std * torch.rand_like(self.A_v)
 
-            self.A_v = torch.ones(instance.data.shape, dtype=torch.float32, device=self.device) # Assume adjacency matrix full of ones
+            # self.A_v = torch.ones(instance.data.shape, dtype=torch.float32, device=self.device) # Assume adjacency matrix full of ones
+            self.A_v = torch.tensor(instance.data, dtype=torch.float32, device=self.device) # instance.data is the adjacency matrix
 
             if self.debugging: print(f"P_init == instance.data: {torch.equal(self.P_init, torch.tensor(instance.data))}") # Debugging: γ_edges != 0 ←→ it prints False
 
             if self.update_node_feat: # (Two branches initialize identically)
                 if not self.change_node_feat: # Enable only discarding or adding of node features (node feature gating)
-                    self.P_node_hat = torch.zeros(instance.node_features.shape, requires_grad=True) # Initialization of P_node_hat: Perturbation Matrix for Node Features
+                    self.P_node_hat = - torch.ones(instance.node_features.shape, requires_grad=True, device=self.device) # Initialization of P_node_hat: Perturbation Matrix for Node Features
                 elif self.change_node_feat: # Allow node features to change features
                     # self.P_node_hat = torch.tensor(instance.node_features, requires_grad=False) # Initialization Ⅰ of P_node_hat: Perturbation Matrix for Node Features. Init as node_features.
                     # self.P_node_hat[missing_nodefeatures] = self.γ_node_feat # Add node features where they are missing (0)
                     # self.P_node_hat.requires_grad_(True) # Enable backpropagation
-                    self.P_node_hat = torch.zeros(instance.node_features.shape, requires_grad=True) # Initialization Ⅱ of P_node_hat: Perturbation Matrix for Node Features. Init as ones.
+                    self.P_node_hat = torch.zeros(instance.node_features.shape, requires_grad=True, device=self.device) # Initialization Ⅱ of P_node_hat: Perturbation Matrix for Node Features. Init as ones.
 
-            # if self.debugging: print(f"P_init: {self.P_init}")
-            self.P_sym = torch.zeros(instance.data.shape, dtype=torch.float32, requires_grad=False, device=self.device)
-            i, j = np.triu_indices(N)
-            self.P_sym[i,j] = self.P_init
-            if self.directed:
-                self.P_hat = self.P_sym
-            else:
-                self.P_hat = self.P_sym + self.P_sym.t() - torch.diag(torch.diag(self.P_sym)) # Symmetrizing P_hat
+            # # if self.debugging: print(f"P_init: {self.P_init}")
+            # self.P_sym = torch.zeros(instance.data.shape, dtype=torch.float32, requires_grad=False, device=self.device)
+            # i, j = np.triu_indices(N)
+            # self.P_sym[i,j] = self.P_init
+            # if self.directed:
+            #     self.P_hat = self.P_sym
+            # else:
+            #     self.P_hat = self.P_sym + self.P_sym.t() - torch.diag(torch.diag(self.P_sym)) # Symmetrizing P_hat
 
-        # P_triu = torch.triu(self.P_init, diagonal=0)
-        # self.P_hat = 0.5 * (self.P_init + self.P_init.t()) # Symmetrizing P_hat
-        self.P_hat = torch.nn.Parameter(self.P_hat.clone())
-        self.P_hat.requires_grad_(True) # Enable backpropagation
-        # if self.debugging: print(f"P_hat symmetrized: {self.P_hat}")
+        # # P_triu = torch.triu(self.P_init, diagonal=0)
+        # # self.P_hat = 0.5 * (self.P_init + self.P_init.t()) # Symmetrizing P_hat
+        # self.P_hat = torch.nn.Parameter(self.P_hat.clone())
+        # self.P_hat.requires_grad_(True) # Enable backpropagation
+        # # if self.debugging: print(f"P_hat symmetrized: {self.P_hat}")
+
+        self.P_hat = - torch.ones_like(self.A_v, requires_grad=False, dtype=torch.float32, device=self.device)
 
         # Node features
         self.x = torch.tensor(instance.node_features, dtype=torch.float32, device=self.device) # Feature vector for v [3.1]
@@ -349,7 +315,6 @@ class XPlore(Explainer):
         if self.visualize: self.pos = nx.spring_layout(nx.from_numpy_array(instance.data)) # Fix graph orientation 
 
         if self.chem_flag and self.atom_label is not None:
-            # print(self.dataset.name)
             if "MUTAG" in self.dataset.name:
                 MUTAG_VALENCE = {0: 4, 1: 3, 2: 2, 3: 1, 4: 1, 5: 1, 6: 1}  # C,N,O,F,I,Cl,Br
                 self.max_valence = torch.tensor(
@@ -363,7 +328,6 @@ class XPlore(Explainer):
         self.vel = torch.zeros((self.n, self.n), dtype=torch.float32, device=self.P_hat.device)
         self.ema = self.P_hat.data.clone()
         self.α = self.local_config['parameters']['alpha']
-        # print(f"Initial learning rate: {self.α}")
         self.lr_reduction_epoch = self.K // self.K #XXX 
 
         self.num_structural_feat = 0
@@ -385,15 +349,12 @@ class XPlore(Explainer):
 
             loss = self.__calculate_loss(instance) # Compute Loss #XXX
             # loss = self.g_v_logits[self.f_v]
-            # print(f"loss: {loss.item()}")
-            # print(f"{torch.autograd.grad(loss, self.edge_weights)[0]}")
             loss.backward()
 
             ...
             # input()
             # from src.utils.torch.gcn import GCNConvWithEdgeTracking
             # edge_messages = [conv.last_messages.abs().sum(dim=1) for conv in self.oracle.model.graph_convs if isinstance(conv, GCNConvWithEdgeTracking)]
-            # print(f"edge_messages:\n{len(edge_messages), edge_messages[0].shape, edge_messages[1].shape}")
 
             # num_nodes = self.P_hat.shape[0]
             # edge_influence = torch.zeros_like(self.P_hat)
@@ -401,7 +362,6 @@ class XPlore(Explainer):
             #     src = self.edge_index[0]
             #     dst = self.edge_index[1]
             #     edge_influence[src, dst] += layer_msgs
-            # print(f"edge_influence:\n{edge_influence}")
 
             μ = 0.9
             β = 0.9
@@ -420,7 +380,6 @@ class XPlore(Explainer):
             if self.update_node_feat and (not hasattr(self, "ema_node") or self.ema_node.shape !=self.x.shape):
                 self.ema_node = self.P_node_hat.data.clone()
 
-            # print(f"self.P_hat.grad: {self.P_hat.grad}")
             # input()
 
             if self.extended:
@@ -428,11 +387,9 @@ class XPlore(Explainer):
                 g = g / (g.abs().max() + 1e-8) # NOTE 
                 g = g / (g.norm() + 1e-8) # NOTE 
                 self.P_hat.grad = g # NOTE 
-                # print(f"self.P_hat.grad normalized: {self.P_hat.grad}")
 
                 # --- MOMENTUM ---
                 self.vel = μ * self.vel + (1 - μ) * self.P_hat.grad
-                # print(f"self.vel: {self.vel}")
 
                 # --- GRADIENT CLIP ---
                 # self.vel.data.clamp_(-max_step, max_step)
@@ -448,21 +405,10 @@ class XPlore(Explainer):
             with torch.no_grad():  # Update without tracking the gradients further
                 if self.debugging: print(f"P_hat before update: {self.P_hat}")                           
 
-                # print(f"self.A_v_bar: {self.A_v_bar}")
                 # present_mask = (self.A_v_bar == 1).to(self.P_hat.grad.dtype)
                 # missing_mask = 1.0 - present_mask
 
-                # print(f"self.P_sym.grad: {self.P_sym.grad}")
-                # print(f"self.P_hat.is_leaf: {self.P_hat.is_leaf}")
-                # print(f"P_hat before update: {self.P_hat}")
-                # print(f"self.P_hat.grad: {self.P_hat.grad}")
-                # print(f"self.P_hat.grad.shape: {self.P_hat.grad.shape}")
-                # print(f"self.A_v_bar.grad: {self.A_v_bar.grad}")
                 # self.P_hat.grad[self.edge_indices_ones] = self.w.grad.clone().detach().float()
-                # print(f"self.P_hat.grad: {self.P_hat.grad}")
-                # input()
-                # print(f"- self.α * self.P_hat.grad * present_mask: {- self.α * self.P_hat.grad * present_mask}")
-                # print(f"+ self.α * self.P_hat.grad * missing_mask: {+ self.α * self.P_hat.grad * missing_mask}")
 
                 # parameter update
                 if self.extended:
@@ -470,7 +416,6 @@ class XPlore(Explainer):
 
                     # --- EMA SMOOTH ---
                     self.ema = β * self.ema + (1 - β) * self.P_hat.data
-                    # print(f"self.ema: {self.ema}")
                     self.P_hat.data = self.ema.clone()
 
                     self.P_hat.data = (self.P_hat.data + self.P_hat.data.T) / 2 # Symmetrizing P_hat after update
@@ -481,14 +426,11 @@ class XPlore(Explainer):
                     missing_mask = torch.tensor(instance.data == 0)
                     self.P_hat.data[missing_mask] = 0
 
-                    # print(f"self.P_hat.data:\n{self.P_hat.data}")
                     # self.P_hat.data.clamp_(-5, 5)
 
                     # self.P_hat.grad = self.P_hat.grad / (self.P_hat.grad.abs().max() + 1e-8) # normalize # normalize to [-1,1]
                     
                     # self.P_hat.data = β * self.P_hat + (1 - β) * (self.P_hat + self.α * self.P_hat.grad)
-                    # print(f"grad_norm: {self.P_hat.grad}")
-                    # print(f"P_hat after update: {self.P_hat}")
 
                     self.P_hat += self.α * self.P_hat.grad # Gradient update step with learning rate 
                 
@@ -506,15 +448,8 @@ class XPlore(Explainer):
                 self.P_node_hat.grad.zero_() # zero gradients for next iteration
 
             if self.visualize and self.new_CF: # or (self.A_v_bar.data.numpy() != instance.data).any(): # and self.opt_flag:
-                # print(instance.data, "\nCF Adj: ", self.A_v_bar.data)
                 instance_graph = nx.from_numpy_array(instance.data)
                 CF_graph = nx.from_numpy_array(self.A_v_bar.clone().detach().cpu().numpy())
-
-                # print(instance.node_features.mean(axis=1))
-                # print(self.N_v_bar.clone().detach().numpy().mean(axis=1))
-                # print(instance.data)
-                # print(self.A_v_bar)
-                # print(f"distance: {self.__distance(instance.data, self.A_v_bar.clone().detach().numpy())}")
 
                 # Draw graphs. Node colours are the mean of the node features
                 fig, axes = plt.subplots(1, 2, figsize=(12, 6))
@@ -530,7 +465,7 @@ class XPlore(Explainer):
             elif self.debugging: input(f"Iteration {self.k} finished | Press Enter to continue")
 
             if (self.k+1) % self.lr_reduction_epoch == 0 and self.boost_α and self.extended:
-                if (self.A_v_bar.data.numpy() == instance.data).all():
+                if (self.A_v_bar.data.clone().detach().cpu().numpy() == instance.data).all():
                     self.α *= 1.15
                 else:
                     self.α *= 1
@@ -557,12 +492,8 @@ class XPlore(Explainer):
         edge_weights_full = edge_weights_full.flatten().clone().detach().cpu().numpy()
 
         # edge_indices = (self.v_bar_opt[0] != 0).nonzero(as_tuple=True)[0]
-        # print(f"instance.edge_features.shape: {instance.edge_features.shape}")
-        # print(f"edge_indices.shape: {edge_indices.shape}")
         # edge_features = torch.tensor(instance.edge_features[edge_indices])
-        # print(f"edge_features.shape: {edge_features.shape}")
         # edge_features_full = torch.zeros(self.v_bar_opt[0].shape + (self.feat_dim,), dtype=torch.float32,)
-        # print(f"edge_features_full.shape: {edge_features_full.shape}")
         # edge_features_full[edge_indices] = edge_features # features having also 0s for missing edges
         # edge_features_full = edge_features_full.flatten().clone().detach().cpu().numpy()
 
@@ -577,16 +508,6 @@ class XPlore(Explainer):
         #     graph_features = instance.graph_features
         #     )
 
-        # print(f"edge_index_full.shape: {edge_index_full.shape}")
-        # print(f"self.v_bar_opt[0].shape: {self.v_bar_opt[0].shape}")
-        # print(f"self.v_bar_opt[1].shape: {self.v_bar_opt[1].shape}")
-        # print(f"edge_indices.shape: {edge_indices.shape}")
-        # print(f"edge_weights.shape: {edge_weights.shape}")
-        # print(f"edge_weights_full.shape: {edge_weights_full.shape}")
-        # print(f"edge_weights_full len: {len(edge_weights_full)}")
-        # print(edge_weights_full)
-        # print(self.v_bar_opt[1].clone().detach().cpu().numpy())
-        
         v_bar_opt_GI = GraphInstance(
             id = instance.id,
             label = self.g_v_bar_pred, # Predicted class of the CF
@@ -598,30 +519,17 @@ class XPlore(Explainer):
             iteration = self.k
             )
         
-        # print(f"print(v_bar_opt_GI.edge_weights.shape) : {v_bar_opt_GI.edge_weights.shape}")   
-
         # from src.evaluation.evaluation_metric_correctness_full import CorrectnessFullMetric
         # CorrectnessFullMetric.evaluate(v_bar_opt_GI)
         # input()
 
         if self.debugging: print(f"{Color.MAGENTA}Opt predicted class: {Color.RESET}{self.oracle.predict(v_bar_opt_GI)}")
         if self.visualize and not self.opt_flag: # and self.opt_flag:
-            # print(instance.data, "\n", self.A_v_bar)
-            # print("NF")
-            # print(instance.node_features)
-            # print(self.N_v_bar.clone().detach().numpy())
             instance_graph = nx.from_numpy_array(instance.data)
             CF_graph = nx.from_numpy_array(self.A_v_bar.clone().detach().cpu().numpy())
 
             # Draw graphs. Node colours are the mean of the node features
             fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-            # print(f"fist_nf: {first_nf}")
-            # print(f"instance.N_v_bar: {self.N_v_bar}")
-            # print(f"self.x: {self.x}")
-            # print(f"node_features_map: {node_features_map}")
-
-            # print(f"instance.data: {instance.data}")
-            # print(f"self.A_v_bar: {self.A_v_bar}")
             nx.draw(instance_graph, pos=self.pos, ax=axes[0], with_labels=True, cmap='cool', node_color=instance.node_features.mean(axis=1), edge_color='gray')
             axes[0].set_title(f"Initial Graph | Predicted Class: {self.f_v}")
             nx.draw(CF_graph, pos=self.pos, ax=axes[1], with_labels=True, cmap='cool', node_color=self.N_v_bar.clone().detach().cpu().numpy().mean(axis=1), edge_color='gray')
@@ -642,7 +550,6 @@ class XPlore(Explainer):
             G = nx.from_numpy_array(instance.data)
 
             for i, feat in enumerate(instance.node_features):
-                # print(feat.mean())
                 G.nodes[i]["Feature"] = feat.mean()
 
             nx.write_gexf(G, f"CFs_figs\\{instance.id}-original.gexf")
@@ -651,7 +558,6 @@ class XPlore(Explainer):
             print(edge_weights_full.reshape(instance.data.shape).shape)
 
             for i, feat in enumerate(self.N_v_bar.clone().detach().cpu().numpy()):
-                # print(feat.mean())
                 G.nodes[i]["Feature"] = feat.mean()
 
             nx.write_gexf(G, f"CFs_figs\\{instance.id}-{explainer_name}-{oracle_name}.gexf")
@@ -764,9 +670,7 @@ class XPlore(Explainer):
                     try:
                         mol = Chem.RWMol(mol)
                         # Print SMILES before fix
-                        print(f"SMILES before fix: {Chem.MolToSmiles(mol)}")
                         Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_PROPERTIES)
-                        print(f"SMILES after fix: {Chem.MolToSmiles(mol)}")
                         return mol
                     except Exception as e2:
                         print(f"Projection failed: {e2}")
@@ -785,7 +689,6 @@ class XPlore(Explainer):
                 # mol = nx_to_mol(G, self.dataset.name)
                 mol = nx_to_mol(G, self.dataset.name)
                 mol_original = nx_to_mol(G_original, self.dataset.name)
-                # print(f"mol: {mol}")
                 if mol:
                     print(f"SMILES raw: {Chem.MolToSmiles(mol)}")
                     # plot_molecule(mol, title=f"CF Molecule - Valid: {chem_valid}")
@@ -825,22 +728,15 @@ class XPlore(Explainer):
         # [line 1]: P ← threshold(σ(P_hat))
         self.temperature *= self.temperature
         P_sigmoid = torch.sigmoid(self.P_hat / self.temperature) # Threshold on sigmoid of P_hat
-        threshold = .6225 # if self.extended else .5 # NOTE This equals CF-GNNExplainer using a threshold of 0.5 on original P_hat
+        threshold = 0.5 # if self.extended else .5 # NOTE This equals CF-GNNExplainer using a threshold of 0.5 on original P_hat
         mask = (P_sigmoid >= threshold).float() # Hard mask
         # P = P_sigmoid + (mask - P_sigmoid).clone().detach() # Gradients can flow through P
         P = mask + (P_sigmoid - P_sigmoid.clone().detach()) # Gradients can flow through P
-        # print(f"P: {P}")
 
-        self.A_v_bar = P * self.A_v # [line 2]: Ā_v = P ⊙ A_v
-        # if instance.id == 10: # and (self.k == 179 or self.k == 0):
-        #     print(f"instance.data:\n{instance.data}")
-        #     print(f"self.P_hat:\n{self.P_hat}")
-        #     # print(f"self.A_v:\n{self.A_v}")
-        #     print(f"A_v_bar:\n{self.A_v_bar}"); input()
-        # print(f"self.A_v_bar.shape: {self.A_v_bar.shape}")
-        # print(f"self.A_v_bar: {self.A_v_bar}")
-        # print(f"instance.data: {instance.data}")
-        if not self.extended:
+        # self.A_v_bar = P * self.A_v # [line 2]: Ā_v = P ⊙ A_v
+        self.A_v_bar = self.A_v + P * (1 - 2 * self.A_v)
+
+        if not self.extended and not (self.update_node_feat or self.change_node_feat):
             self.A_v_bar.fill_diagonal_(1) # Add self-loops Eq(4) [5.2]
 
         # self.edge_index = self.A_v_bar.nonzero(as_tuple=False).T
@@ -849,11 +745,6 @@ class XPlore(Explainer):
         # self.edge_indices = torch.where(self.A_v_bar != 0) # (integer tensor)
         # self.edge_weights = self.A_v_bar[self.edge_indices] # Values of A_v_bar edges, i.e. weights for the presence of edges (real tensor)
         # self.edge_index = torch.nonzero(self.A_v_bar).int().T
-        # print(f"edge_weights.shape: {self.edge_weights.shape}")
-        # print(f"self.edge_weights: {self.edge_weights}")
-        # print(f"instance.edge_weights: {instance.edge_weights}")
-        # print(f"edge_index.shape: {self.edge_index.shape}")
-        # print(f"self.edge_index: {self.edge_index}")
 
         # i,j = torch.triu_indices(self.n, self.n, offset=0, device=self.device)
         # self.full_edge_index = torch.stack([i, j], dim=0)  # 2 x M
@@ -863,13 +754,9 @@ class XPlore(Explainer):
         # ei = self.edge_index[0]
         # ej = self.edge_index[1]
         # self.edge_weights = self.A_v_bar[ei, ej]
-        # # print(f"self.edge_weights.shape: {self.edge_weights.shape}")
-        # # print(f"self.edge_index.shape: {self.edge_index.shape}")
 
         self.edge_index = self.A_v.nonzero(as_tuple=False).T
         self.edge_weights = self.A_v_bar[self.edge_index[0], self.edge_index[1]]
-        # print(f"self.edge_weights.shape: {self.edge_weights.shape}")
-        # print(f"self.edge_index.shape: {self.edge_index.shape}")
 
         # self.edge_index = torch.ones_like(self.A_v_bar).nonzero(as_tuple=False).T
         # self.edge_weights = self.A_v_bar[self.edge_index[0], self.edge_index[1]]
@@ -886,14 +773,8 @@ class XPlore(Explainer):
         # # self.edge_weights_full = torch.zeros_like(self.A_v_bar) 
         # # self.edge_weights_full[self.edge_indices] = self.edge_weights # weights having also 0s for missing edges
         # # self.edge_weights_full = self.edge_weights_full[self.edge_index_full]
-        # # print(f"edge_weights_full.shape: {edge_weights_full.shape}")
-        # # print(f"edge_weights_full: {edge_weights_full}")
 
-
-        # input(self.atom_label)
-        # print(f"instance.feature_map:\n{instance.node_features}")
         if d := self.__distance(self.data, self.A_v_bar):
-            # print(f"distance: {d}")
             graph = nx.from_numpy_array(P.clone().detach().cpu().numpy())
             num_nodes = graph.number_of_nodes()
             features_to_stack = []
@@ -909,7 +790,6 @@ class XPlore(Explainer):
             # if any(dataset in self.dataset.name for dataset in self.CHEMICAL_DATASETS):
             #     atom_onehot = instance.node_features[:, :instance.n_atom_label]
             #     features_to_stack.insert(0, atom_onehot)  # prepend, before causality
-            #     # print(f"atom_onehot: {atom_onehot}")
 
             # Compute Centrality features as lists in node order
             if self.manipulators != [] and 'NodeCentrality' in self.manipulators:
@@ -931,21 +811,17 @@ class XPlore(Explainer):
                 # input(causality_manip)
                 if causality_manip:
                     # dim = causality_manip.causality_dim_choice
-                    # print(f"causality dim: {dim}")
                     u = int(causality_manip.causalities[instance.id])
                     noise_1 = (causality_manip.max_1[u] - causality_manip.min_1[u]) * np.random.random_sample() + causality_manip.min_1[u]
                     causality_val = noise_1 + 0.5 * np.mean(degree)
                     causality = np.full((num_nodes, 1), causality_val)  # (N, dim) not (N,)
                     features_to_stack.append(causality)
-                    # print(f"causality.shape: {causality.shape}")
 
             if self.manipulators != [] and 'NodeCentrality' in self.manipulators:
                 features_to_stack.append(centralities)
             
             node_features = np.hstack(features_to_stack)
-            # print(f"node_features:\n{node_features.shape}"); input()
             self.N_v_bar = torch.tensor(node_features, dtype=torch.float32, device=self.device)
-            # print(f"feature_map:\n{node_features}")
         else: # Keep same node features
             self.N_v_bar = self.x.clone().detach() # Feature vector for v [3.1]
             self.N_v_bar.requires_grad_(False) # Disable backpropagation
@@ -980,12 +856,10 @@ class XPlore(Explainer):
             edge_features = self.edge_features[self.edge_indices] # Edge features for the existing edges
             self.E_v_bar = edge_features
             self.E_v_bar.requires_grad_(False) # Disable backpropagation
-            # print(f"self.E_v_bar shape: {self.E_v_bar.shape}")
 
             # self.E_v_bar_full = self.edge_features
             # self.E_v_bar_full = self.E_v_bar_full[self.edge_index_full]
             # self.E_v_bar_full.requires_grad_(False) # Disable backpropagation
-            # print(f"self.E_v_bar_full shape: {self.E_v_bar_full.shape}")
 
 
             # self.G_v_bar = torch.tensor(instance.graph_features, dtype=torch.float32)
@@ -998,28 +872,11 @@ class XPlore(Explainer):
             self.g_v_logits = self.predict_diffusion(self.N_v_bar, self.edge_index, self.edge_weights)
         else:
             # self.edge_indices_full = torch.nonzero(torch.ones_like(self.A_v_bar)).int().T.requires_grad_(True)
-            # print(f"torch.nonzero(self.A_v_bar).int().shape: {torch.nonzero(torch.ones_like(self.A_v_bar)).int().shape}")
-            # print(f"self.edge_indices: {self.edge_indices}")
-            # print(f"self.edge_indices.shape: {self.edge_indices.shape}")
-            # print(f"self.edge_index_full: {self.edge_index_full}")
-            # input()
-
-            # print("A_v_bar grad_fn", self.A_v_bar.grad_fn)
-            # print("P_hat grad_fn", self.P_hat.grad_fn)
-            # print("edge_weights grad_fn", self.edge_weights.grad_fn)
 
             # self.g_v_logits = self.oracle.model(self.N_v_bar, self.edge_index, self.edge_weights, None).cpu().squeeze()
-            # print()
-            # print(self.A_v_bar)
-            # print(self.edge_weights)
-            # print(self.N_v_bar)
 
             # self.g_v_logits = self.oracle.model(self.N_v_bar, self.edge_index_full, self.edge_weights_full, self.batch).squeeze()
-            # print(f"self.g_v_logits: {self.g_v_logits}")
-            # print(f"self.N_v_bar.shape, self.edge_index.shape, self.edge_weights.shape: {self.N_v_bar.shape, self.edge_index.shape, self.edge_weights.shape}")
-            # print(self.k, self.N_v_bar.shape)
             self.g_v_logits = self.oracle.model(self.N_v_bar, self.edge_index, self.edge_weights, self.batch).squeeze()
-            # print(f"self.g_v_logits: {self.g_v_logits}")
             # input("logits computed")
 
 
@@ -1028,7 +885,6 @@ class XPlore(Explainer):
         self.oracle._call_counter += 1
 
         g_v_bar_pred = torch.argmax(self.g_v_logits, dim=-1) # Getting the predicted class
-        # print(f"new pred: {g_v_bar_pred}")
         # if torch.any(g_v_bar_pred != self.oracle.predict(A_v_bar_GI)): input(f"{Color.RED}Warning{Color.RESET} | Oracle's prediction is ambiguous")
         self.g_v_bar_pred = g_v_bar_pred
 
@@ -1079,9 +935,7 @@ class XPlore(Explainer):
             inputs = self.g_v_logits # F.gumbel_softmax(self.g_v_logits, dim=-1, hard=True)
             # targets = (torch.nn.functional.one_hot(self.f_v, num_classes=self.dataset_classes).sum(dim=1)>0).float() # Create a multi-one-hot from a vector with many class labes eg. [0,2,3] -> [1,0,1,1] (mask to prevent eventual class label repetitions eg. [2,4,4,5])
             targets = torch.nn.functional.one_hot(self.f_v, num_classes=self.dataset_classes).float() # having target label for each node -> one-hot for each label
-            # print(f"targets: {targets.shape} - inputs: {inputs.shape}")
         elif isinstance(self.loss_fn, torch.nn.NLLLoss): # CE is just NNL with log+softmax included
-            # print(f"self.g_v_logits: {self.g_v_logits}")
             inputs = F.log_softmax(self.g_v_logits, dim=0) # Prediction log probabilities required for NLL loss
             targets = self.f_v
 
@@ -1102,7 +956,7 @@ class XPlore(Explainer):
         # 2. Distance loss: L_dist
         # Compute the number of edges removed (element-wise difference between A_v and A_v_bar) and the change in node features
         edge_diff = torch.abs(self.data - self.A_v_bar) # Element-wise absolute difference for edges
-        node_diff = torch.abs(torch.tensor(instance.node_features) - self.N_v_bar) # Element-wise absolute difference for nodes features
+        node_diff = torch.abs(torch.tensor(instance.node_features, device=self.device) - self.N_v_bar) # Element-wise absolute difference for nodes features
         D_edges = edge_diff.sum() # L1-norm for edges: count the number of edges changed
         D_nodes = node_diff.sum() # L1-norm for nodes: distance between the node features changed
         D_nodes = 0
@@ -1111,18 +965,14 @@ class XPlore(Explainer):
         # Chemical loss
         if self.chem_flag:   
             valence_penalty = self.__valence_penalty() if self.atom_label is not None else 0
-            # print(f"Valence penalty: {valence_penalty}")#; input()
             connectivity_penalty = self.__connectivity_penalty()
-            # print(f"Connectivity penalty: {connectivity_penalty}")#; input()
             total_loss = - L_pred - (self.β * L_dist + 0.1 * valence_penalty + 0.5 * connectivity_penalty) # NOTE here we do - NLL (normal BCE)
 
 
         else:
             # 3. Total loss
-            # print("Loss:", L_pred, L_dist)
-             # NOTE we want to flip the prediction. By doing gradient ascent we want to maximize the loss on the logits to produce misclassification. Distance is negative since we want to go in the direction of negative distance i.e., closeness.
+            # NOTE we want to flip the prediction. By doing gradient ascent we want to maximize the loss on the logits to produce misclassification. Distance is negative since we want to go in the direction of negative distance i.e., closeness.
             total_loss = - L_pred - (self.β * L_dist) # NOTE here we do - NLL (normal BCE)
-            # print(f"Total loss: {total_loss} - L_pred: {L_pred} - L_dist: {L_dist} - Valence: {valence_penalty} - Connectivity: {connectivity_penalty}")#; input()
             # total_loss = - (L_pred_margin - self.β * L_dist)
         
         # return L_pred
@@ -1137,7 +987,6 @@ class XPlore(Explainer):
         return (v != CF).sum()
     
     def __valence_penalty(self):
-        # print(f"self.A_v_bar: {self.A_v_bar}\nmax_valence: {self.max_valence}"); input()
         soft_degree = self.A_v_bar.sum(dim=1) - torch.diag(self.A_v_bar)  # P ⊙ A_v, gradients flow - subtract self-loops if present
         violation = torch.relu(soft_degree - self.max_valence)
         return violation.sum()

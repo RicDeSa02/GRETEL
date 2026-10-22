@@ -74,7 +74,7 @@ class OracleTorch(TorchBase, Oracle):
         edge_indices = torch.where(data != 0) # (int tensor)
         edge_weights = data.detach().clone()[edge_indices[0], edge_indices[1]]        
         adj_full = torch.ones_like(data)
-        edge_weights_full = torch.zeros_like(data) 
+        edge_weights_full = torch.zeros_like(data, dtype=torch.float32, device=self.device) 
         edge_weights_full[edge_indices] = edge_weights # weights having also 0s for missing edges
         edge_weights_full = edge_weights_full.flatten()
         edge_index_full = adj_full.nonzero(as_tuple=False).T

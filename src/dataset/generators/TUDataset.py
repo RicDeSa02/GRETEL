@@ -85,7 +85,8 @@ class TUDataset(Generator):
             try:
                 edge_features = instance.edge_weights.numpy()
             except AttributeError:
-                self.context.logger.info(f'Instance id = {id} does not have edge features.')
+                # self.context.logger.info(f'Instance id = {id} does not have edge features.')
+                ...
 
             # if self.dataset_name == "TRIANGLES": print("TRIANGLES dataset detected, adjusting labels by -1")
             label = instance.y.item()-1 if self.dataset_name == "TRIANGLES" else instance.y.item()

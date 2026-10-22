@@ -65,6 +65,7 @@ class GNNLayerNormed(nn.Module):
 
         # residual projection if needed
         self.res = nn.Identity() if in_dim == out_dim else nn.Linear(in_dim, out_dim, dtype=torch.float32)
+        self.res = self.res.to(torch.float32)
 
     def forward(self, x, edge_index, edge_weight=None, batch=None, **kwargs):
         
@@ -76,5 +77,8 @@ class GNNLayerNormed(nn.Module):
 
         h = self.norm(x, batch)
         out = self.conv(h, edge_index, edge_weight, **kwargs)
-        return out + self.res(x)
+        try:
+            return out + self.res(x)
+        except:
+            return out.to(x.dtype) + self.res.to(x.dtype)(x)
 
