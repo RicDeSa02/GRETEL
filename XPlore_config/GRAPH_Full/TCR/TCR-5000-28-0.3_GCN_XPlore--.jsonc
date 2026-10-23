@@ -10,7 +10,7 @@
             ]
         }
     },
-    // "do-pairs":[{"compose_tcr_gcn" : "config/snippets/do-pairs/TCR-5000-28-0.3_GCN.json"} ],
+// "do-pairs":[{"compose_tcr_gcn" : "config/snippets/do-pairs/TCR-5000-28-0.3_GCN.json"} ],
     "do-pairs": [
         {
             "dataset" : {
@@ -51,7 +51,7 @@
     "explainers": [{"class": "src.explainer.perturbation.XPlore.XPlore",
     "parameters": {
         "alpha": 0.1,
-        "K": 50,
+        "K": 500,
         "beta": 0.5,
         "extended": false,
         "gamma_edge": 0,
@@ -60,7 +60,7 @@
         "gamma_node_feat": 0,
         "visualize": false,
         "boost_alpha": true}}],
-    "compose_mes" : "config/snippets/default_metrics.json",
+    "compose_mes" : "config/snippets/metrics_fully_connected.json",
     "compose_strs" : "config/snippets/default_store_paths.json",
     "embedders": [
       {"class": "src.embedder.karateclub.FeatherGraph.FeatherGraphEmbedder", "parameters":{        }},

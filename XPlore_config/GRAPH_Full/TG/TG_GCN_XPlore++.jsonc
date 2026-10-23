@@ -25,6 +25,7 @@
             "parameters": {
                 "epochs": 20,
                 "batch_size": 32,
+                "device": "cpu",
                 "optimizer": {
                     "class": "torch.optim.RMSprop",
                     "parameters": {

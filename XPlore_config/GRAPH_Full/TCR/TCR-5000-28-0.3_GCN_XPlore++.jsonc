@@ -51,7 +51,7 @@
     "explainers": [{"class": "src.explainer.perturbation.XPlore.XPlore",
     "parameters": {
         "alpha": 0.1,
-        "K": 50,
+        "K": 500,
         "beta": 0.5,
         "extended": true,
         "gamma_edge": 0,

@@ -24,7 +24,7 @@
             "class": "",
             "parameters": {
                 "epochs": 20,
-                "device": "cuda",
+                "device": "cpu",
                 "batch_size": 32,
                 "optimizer": {
                     "class": "torch.optim.RMSprop",

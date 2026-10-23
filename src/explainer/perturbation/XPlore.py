@@ -518,6 +518,7 @@ class XPlore(Explainer):
         #     graph_features = instance.graph_features
         #     )
 
+        #region GraphInstance return
         v_bar_opt_GI = GraphInstance(
             id = instance.id,
             label = self.g_v_bar_pred, # Predicted class of the CF
@@ -768,7 +769,7 @@ class XPlore(Explainer):
         # ej = self.edge_index[1]
         # self.edge_weights = self.A_v_bar[ei, ej]
 
-        self.edge_index = self.A_v.nonzero(as_tuple=False).T
+        self.edge_index = torch.ones_like(self.A_v).nonzero(as_tuple=False).T
         self.edge_weights = self.A_v_bar[self.edge_index[0], self.edge_index[1]]
 
         # self.edge_index = torch.ones_like(self.A_v_bar).nonzero(as_tuple=False).T
