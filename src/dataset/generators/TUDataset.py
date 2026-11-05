@@ -105,7 +105,7 @@ class TUDataset(Generator):
 
             assert (torch.tensor(adj_matrix).nonzero().t() == instance.edge_index).all() # NOTE Verifying alignment of edge_index reconstruction. This used by ChemicalValidityMetric to reconstruct bond_labels and check chemical validity.
 
-            self.dataset.instances.append(GraphInstance(id=id, 
+            self.dataset.instances.append(GraphInstance(id=id,
                                                         label=label, 
                                                         data=adj_matrix.numpy(),
                                                         graph_features=None,

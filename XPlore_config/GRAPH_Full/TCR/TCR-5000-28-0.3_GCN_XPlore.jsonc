@@ -25,7 +25,7 @@
             "oracle": {
                 "class": "src.oracle.nn.torch_full.OracleTorch",
                 "parameters": {
-                    "epochs": 100,
+                    "epochs": 10,
                     "batch_size": 32,
                     "device": "cpu",
                     "optimizer": {
@@ -50,7 +50,7 @@
     ],
     "explainers": [{"class": "src.explainer.perturbation.XPlore.XPlore",
     "parameters": {
-        "alpha": 1e0, 
+        "alpha": 0.1, 
         "K": 500, 
         "beta": 0.5, 
         "extended": true, 

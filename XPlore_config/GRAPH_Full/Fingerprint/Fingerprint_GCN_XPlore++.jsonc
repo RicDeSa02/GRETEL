@@ -33,7 +33,7 @@
                 "epochs":2000,
                 "batch_size": 128,
                 "early_stopping_threshold":1e-4,
-                "device": "cpu",
+                "device": "cuda",
                 "optimizer": {
                     "class": "torch.optim.RMSprop",
                     "parameters": {

@@ -36,7 +36,7 @@ class C2Explainer(Explainer):
     def check_configuration(self):
         super().check_configuration()
         p = self.local_config['parameters']
-        p['epochs'] = p.get('epochs', 1000)
+        p['epochs'] = p.get('epochs', 500)
         p['lr'] = p.get('lr', 0.1)
         p['print_loss'] = p.get('print_loss', False)
         p['subgraph_mode'] = p.get('subgraph_mode', False)

@@ -482,7 +482,7 @@ class XPlore(Explainer):
                 # if self.α > 1e1*8: self.α = 1e1*8
                 pbar.set_description(f"Learning rate changed to {Color.YELLOW}{self.α:<.6f}f{Color.RESET} at iteration {Color.YELLOW}{self.k+1}{Color.RESET}/{self.K}")
             
-            if self.opt_flag: break # Breaking at first CF found (Different from paper algorithm → If Efficiency is preferred: avoiding extra loop iterations to find better (closer) CF))
+            # if self.opt_flag: break # Breaking at first CF found (Different from paper algorithm → If Efficiency is preferred: avoiding extra loop iterations to find better (closer) CF))
 
         
         # edge_indices = torch.where(self.v_bar_opt[0] != 0) # (int tensor)

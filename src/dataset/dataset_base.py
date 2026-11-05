@@ -253,7 +253,7 @@ class Dataset(Savable):
                     "dataset": self
                 }
             )
-            self.generator.init()
+            # self.generator.init()
             self._inject_dataset()
 
             # Rebuild manipulators from config (do NOT expect serialized objects)

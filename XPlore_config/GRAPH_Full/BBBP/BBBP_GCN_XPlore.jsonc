@@ -53,7 +53,7 @@
     "explainers": [{
       "class": "src.explainer.perturbation.XPlore.XPlore",
       "parameters": {
-        "alpha": 1e0, 
+        "alpha": 0.1, 
         "K": 500, 
         "beta": 0.5, 
         "extended": true, 

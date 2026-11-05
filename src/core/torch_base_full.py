@@ -182,7 +182,7 @@ class TorchBase(Trainable):
                 edge_index, edge_weights = batch_full_edge_index_and_weights(batch)
                 # print(f"edge_index.shape: {edge_index.shape} - edge_weights.shape: {edge_weights.shape}")
                 # print(f"edge_index: {edge_index[0][:20]}{edge_index[1][:20]} - edge_weights: {edge_weights[:20]}")
-                edge_index, edge_weights = edge_index.to(self.device), edge_weights.to(self.device)
+                edge_index, edge_weights = edge_index.to(self.device), edge_weights.to(self.device).float()
                 # input()
                 
                 pred = self.model(node_features, edge_index, edge_weights, batch.batch)

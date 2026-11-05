@@ -302,7 +302,7 @@ class CFGNNExplainer(Explainer):
             if self.debugging and self.visualize: print(f"Iteration {self.k} finished | Press Enter to continue")
             elif self.debugging: input(f"Iteration {self.k} finished | Press Enter to continue")
             
-            if self.opt_flag: break # Breaking at first CF found (Different from paper algorithm → If Efficiency is preferred: avoiding extra loop iterations to find better (closer) CF))
+            # if self.opt_flag: break # Breaking at first CF found (Different from paper algorithm → If Efficiency is preferred: avoiding extra loop iterations to find better (closer) CF))
 
 
         edge_indices = torch.as_tensor(torch.stack(torch.where(self.v_bar_opt[0] != 0)), device=self.device) # (int tensor)
