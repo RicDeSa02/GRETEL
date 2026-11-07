@@ -10,7 +10,7 @@ from src.dataset.instances.base import DataInstance
 
 class GraphInstance(DataInstance):
 
-    def __init__(self, id, label, data, node_features=None, edge_features=None, edge_weights=None, graph_features=None, dataset=None, directed=False, iteration=0):
+    def __init__(self, id, label, data, node_features=None, edge_features=None, edge_weights=None, graph_features=None, dataset=None, directed=False, iteration=None, time=None):
         super().__init__(id, label, data, dataset=dataset)
         self.node_features = self.__init_node_features(node_features).astype(np.float32)
         self.edge_features = self.__init_edge_features(edge_features).astype(np.float32)
@@ -21,6 +21,7 @@ class GraphInstance(DataInstance):
         # self.atom_labels = atom_labels
         # self.n_atom_types = n_atom_types
         self.iteration = iteration
+        self.time = time
 
         num_nodes = self.data.shape[0]
         num_edges = np.count_nonzero(self.data)

@@ -12,7 +12,7 @@ from src.dataset.manipulators.centralities import NodeCentrality
 from tqdm import tqdm
 from rdkit import Chem
 from rdkit.Chem import Draw, AllChem
-import os
+import os, time
 
 import src.oracle.nn.torch_diffusion
 
@@ -55,7 +55,10 @@ class XPlore(Explainer):
         self.boost_α = local_params['boost_alpha'] # Wheter to decay learning rate (α) during explainer iterations
         self.directed = local_params['directed'] # Wheter the graph is directed or undirected
         self.device = local_params['device']
-        self.chem_flag = local_params.get('chem_flag', False)   
+        self.chem_flag = local_params.get('chem_flag', False) 
+
+        self.best_cf_iteration = self.K
+        self.best_cf_time = None
 
         # Node Features stats for normalization
         X = torch.cat([torch.as_tensor(g.node_features) for g in self.dataset.instances])     # [N*total_nodes, F]
@@ -184,7 +187,7 @@ class XPlore(Explainer):
         # instance.node_features = np.zeros_like(instance.node_features)
         # version = "XPlore++" if self.change_node_feat and self.update_node_feat and self.extended else "XPlore+" if self.update_node_feat and self.extended else "XPlore" if self.extended else "CF-GNNExplainer"
         # try:
-        #     ff"dataset: {self.dataset.dataset_name} - {version}")
+        #     f"dataset: {self.dataset.dataset_name} - {version}")
         # except:
         #     print(f"dataset: Unknown - {version}")
         
@@ -527,7 +530,8 @@ class XPlore(Explainer):
             # edge_features = edge_features,
             edge_weights = edge_weights.clone().detach().cpu().numpy(), # edge_weights_full,
             graph_features = instance.graph_features,
-            iteration = self.k
+            iteration = self.best_cf_iteration,
+            time = self.best_cf_time
             )
         
         # from src.evaluation.evaluation_metric_correctness_full import CorrectnessFullMetric
@@ -921,6 +925,8 @@ class XPlore(Explainer):
                     self.opt_flag = True # CF found
                     self.g_v = g_v_bar_pred
                     self.new_CF = True
+                    self.best_cf_iteration = self.k
+                    self.best_cf_time = time.time()
 
                 # Check for 'closer' CF, i.e. CF that requires less perturbations
                 elif self.__distance(self.v[0], v_bar[0]) < self.__distance(self.v[0], self.v_bar_opt[0]): # [line 8]: else if d(v, v_bar) ≤ d(v, v_bar*) then
@@ -930,6 +936,8 @@ class XPlore(Explainer):
                     else: self.context.logger.info(f"{Color.BLUE}Found new best counterfactual [^node id:{self.node_id}] - {Color.CYAN}Counterfactual predicted class: {Color.RESET}{g_v_bar_pred[self.node_id]} | K: {self.k}")  # Debugging
                     self.g_v = g_v_bar_pred
                     self.new_CF = True
+                    self.best_cf_iteration = self.k
+                    self.best_cf_time = time.time()
 
         return
 
