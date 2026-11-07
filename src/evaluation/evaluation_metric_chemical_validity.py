@@ -3,7 +3,7 @@ from src.dataset.instances.graph import GraphInstance
 from src.core.oracle_base import Oracle
 from src.core.explainer_base import Explainer
 
-import numpy as np, torch
+import numpy as np
 from rdkit import Chem, RDLogger
 
 RDLogger.DisableLog("rdApp.*")
@@ -27,7 +27,6 @@ class ChemicalValidityMetric(EvaluationMetric):
     def __init__(self, config_dict=None) -> None:
         super().__init__(config_dict)
         self._name = 'Chemical_Validity'
-        self.require_connected = True  # True -> fragmented molecules count as invalid
         self.num_structural_feat = None
 
     def evaluate(self, instance_1: GraphInstance, instance_2: GraphInstance, oracle : Oracle=None, explainer : Explainer=None, dataset = None):
@@ -54,7 +53,7 @@ class ChemicalValidityMetric(EvaluationMetric):
 
         mol = Chem.RWMol()
         for s, c, h in zip(symbols, charges, explicit_hs):
-            if h < 0: return False # impossible H count -> invalid
+            if h < 0 or h > 8  or abs(c) > 4: return False # impossible H count -> invalid
             atom = Chem.Atom(s)
             atom.SetFormalCharge(int(c))
             atom.SetNumExplicitHs(int(h))
@@ -83,6 +82,8 @@ class ChemicalValidityMetric(EvaluationMetric):
             if name == "BBBP":
                 m = dataset.node_features_map
                 x = np.asarray(atom_src.node_features)
+                if not np.isfinite(x).all():
+                    return None
                 pt = Chem.GetPeriodicTable()
                 symbols = [pt.GetElementSymbol(int(round(z))) for z in x[:, m['AtomicNum']]]
                 charges = [int(round(c)) for c in x[:, m['FormalCharge']]]
@@ -94,21 +95,23 @@ class ChemicalValidityMetric(EvaluationMetric):
 
             if name in ATOMS:
                 x = np.asarray(atom_src.node_features)
+                if not np.isfinite(x).all():
+                    return None
                 atom_label = np.argmax(x[:, dataset.data.num_node_attributes : x.shape[1] - self._structural_feat(dataset)], axis=1)
                 symbols = [ATOMS[name][int(a)] for a in atom_label]
                 charges = ([int(round(c)) for c in x[:, 1]] if name == "AIDS" else [0] * len(symbols))
                 bonds = {k: BONDS[name][int(l)] for k, l in self.bond_labels_from(bond_src).items()}
                 return symbols, charges, [0] * len(symbols), bonds
-        except Exception:
+        except (ValueError, OverflowError, IndexError, KeyError, RuntimeError):
             return None
         return None
 
     def bond_labels_from(self, ref):
-        edges = torch.tensor(np.asarray(ref.data)).nonzero().t().tolist()
+        rows, cols = np.nonzero(np.asarray(ref.data))
         labels = np.argmax(np.asarray(ref.edge_features), axis=1)
-        assert len(edges[0]) == len(labels)
+        if len(rows) != len(labels): raise ValueError("edge/label mismatch")
         return {(min(u, v), max(u, v)): int(l)
-                for u, v, l in zip(edges[0], edges[1], labels)}
+                for u, v, l in zip(rows.tolist(), cols.tolist(), labels)}
 
     def _structural_feat(self, dataset):
         if self.num_structural_feat is None:

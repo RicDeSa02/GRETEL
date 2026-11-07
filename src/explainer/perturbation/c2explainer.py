@@ -9,6 +9,8 @@ from torch_geometric.utils import is_undirected, sort_edge_index, coalesce
 from src.core.explainer_base import Explainer
 from src.core.trainable_base import Trainable
 
+import networkx as nx, matplotlib.pyplot as plt
+import numpy as np
 
 class C2Explainer(Explainer):
     r"""
@@ -49,6 +51,7 @@ class C2Explainer(Explainer):
         p['n_virtual_nodes'] = p.get('n_virtual_nodes', 3)
         p['beta'] = p.get('beta', 1)
         p['gamma'] = p.get('gamma', 0.1)
+        p['visualize'] = p.get('visualize', False)
 
     def init(self):
         p = self.local_config['parameters']
@@ -66,6 +69,7 @@ class C2Explainer(Explainer):
         self.coeffs = dict(self.DEFAULT_COEFFS)
         self.coeffs['beta'] = p['beta']
         self.coeffs['gamma'] = p['gamma']
+        self.visualize = p['visualize']
 
         self._desired = None
         self.pred_same = None
@@ -74,6 +78,7 @@ class C2Explainer(Explainer):
         self.orig_mask_remain = None
         self.orig_mask_delete = None
         self.orig_mask_add = None
+        self.partials = {}   # instance id -> closest-to-flip graph (only when no CF found)
 
     def real_fit(self):
         # No global training: the optimization is done per instance in explain().
@@ -99,9 +104,46 @@ class C2Explainer(Explainer):
                 p.requires_grad_(r)
             model.train(was_training)
 
-        if best_cf is None:
+        if best_cf is not None:
+            cf_instance = self._build_cf_instance(instance, best_cf, x_aug)
+
+        elif best_cf is None and self.partial_cf is not None:
+            p_edges, margin, epoch = self.partial_cf
+            cf_instance = self._build_cf_instance(instance, p_edges, x_aug)
+            cf_instance.margin, cf_instance.epoch = margin, epoch
+            self.partials[getattr(instance, 'id', None)] = cf_instance
+        
+        elif best_cf is None:
             return copy.deepcopy(instance)   # GRETEL convention: no CF found -> original instance
-        return self._build_cf_instance(instance, best_cf, x_aug)
+        
+        if cf_instance and self.visualize:
+            pos = nx.spring_layout(nx.from_numpy_array(np.asarray(cf_instance.data))) # Fix graph orientation
+            instance_graph = nx.from_numpy_array(instance.data)
+            CF_graph = nx.from_numpy_array(cf_instance.data)
+            fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+            nx.draw(instance_graph, pos=pos, ax=axes[0], with_labels=True, cmap='cool', node_color=instance.node_features.mean(axis=1), edge_color='gray')
+            axes[0].set_title(f"Initial Graph | Predicted Class: {instance.label}")
+            nx.draw(CF_graph, pos=pos, ax=axes[1], with_labels=True, cmap='cool', node_color=cf_instance.node_features.mean(axis=1), edge_color='gray')
+            axes[1].set_title(f"Counterfactual Graph | Predicted Class: {cf_instance.label}")
+            fig.suptitle(f"True label: {instance.label}")
+            plt.show()
+
+            save = input("save graph? (y/n): ")
+        
+            if save.lower() == "y":
+
+                oracle_name = str(self.oracle.model.__class__).split('.')[-2]
+
+                G = nx.from_numpy_array(cf_instance.data)
+
+                for i, feat in enumerate(cf_instance.node_features):
+                    # print(feat.mean())
+                    G.nodes[i]["Feature"] = feat.mean()
+
+                nx.write_gexf(G, f"CFs_figs\\{instance.id}-C2Explainer-{oracle_name}.gexf")
+                input(f"Graph saved to CFs_figs\\{instance.id}-C2Explainer-{oracle_name}.gexf")          
+                
+        return cf_instance
 
     # instance <-> tensors
     @staticmethod
@@ -183,7 +225,9 @@ class C2Explainer(Explainer):
         orig_mask = torch.cat([self.orig_mask_remain, self.orig_mask_delete, self.orig_mask_add])
 
         cfs, cf_labels, cf_perturbs = [], [], []
-        for _ in range(1, self.epochs + 1):
+        self.partial_cf = None
+        best_margin = float('inf')
+        for epoch in range(1, self.epochs + 1):
             optimizer.zero_grad()
 
             y_hat = self._predict(model, x, all_edge_index, all_edge_mask)
@@ -222,6 +266,11 @@ class C2Explainer(Explainer):
                     assert is_undirected(cf_edge_index)
                 y_hat = self._predict(model, x, cf_edge_index)
                 new_label = torch.argmax(y_hat).item()
+                others = torch.cat([y_hat[:target], y_hat[target + 1:]])
+                margin = (y_hat[target] - others.max()).item()
+                if margin < best_margin:
+                    best_margin = margin
+                    self.partial_cf = (cf_edge_index.clone(), margin, epoch)
                 if new_label != target:
                     num_perturb = torch.sum(torch.abs(cf_edge_mask - orig_mask)).item()
                     cfs.append(cf_edge_index)

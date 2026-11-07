@@ -156,7 +156,7 @@ class CF2Explainer(Trainable, Explainer):
                         G.nodes[i]["Feature"] = feat.mean()
 
                     nx.write_gexf(G, f"CFs_figs\\{instance.id}-CF2-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
-                    input(f"Graph saved to CFs_figs\{instance.id}-CF2-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
+                    input(f"Graph saved to CFs_figs\\{instance.id}-CF2-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
 
             if cf_instance and self.chem_flag:
                 ATOM_MAPS = {
@@ -247,7 +247,7 @@ class CF2Explainer(Trainable, Explainer):
                     if input("save graph? (y/n): ").lower() == "y":
                         plot_molecule(mol, filepath=f"CFs_figs\\{self.dataset.name}\\{instance.id}-CF2-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.pdf", ref_mol=mol_original)
                         nx.write_gexf(G, f"CFs_figs\\{self.dataset.name}\\{instance.id}-CF2-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
-                        input(f"Graph saved to CFs_figs\{self.dataset.name}\{instance.id}-CF2-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
+                        input(f"Graph saved to CFs_figs\\{self.dataset.name}\\{instance.id}-CF2-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
 
 			
             return cf_instance

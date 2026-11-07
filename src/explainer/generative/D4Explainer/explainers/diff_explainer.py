@@ -529,10 +529,10 @@ class DiffExplainer(ExplainerD4, Trainable, Explainer):
         score_tensor = torch.stack(score, dim=0).squeeze(-1)  # len_sigma_list, bsz, N, N]
         score_tensor = torch.mean(score_tensor, dim=0).view(-1, 1)  # [bsz*N*N,1]
         mask_bool = mask.bool().view(-1, 1)
-        edge_mask_full = score_tensor[mask_bool].double()
+        edge_mask_full = score_tensor[mask_bool].float()
         # print(type(graph.x[0]), type(full_edge_index))
         # print(graph.x)
-        graph.x = torch.from_numpy(np.array(graph.x)).double()
+        graph.x = torch.from_numpy(np.array(graph.x)).float()
         if graph.x.dim() == 3 and graph.x.size(0) == 1:
             graph.x = graph.x.squeeze(0)
         if args.task == "nc":

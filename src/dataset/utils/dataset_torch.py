@@ -28,10 +28,10 @@ class TorchGeometricDataset(GeometricDataset):
       
   @classmethod
   def to_geometric(self, instance: GraphInstance, label=0) -> Data:
-    adj = torch.from_numpy(instance.data).double().requires_grad_(True)
-    x = torch.from_numpy(instance.node_features).double().requires_grad_(True)
+    adj = torch.from_numpy(instance.data).float().requires_grad_(True)
+    x = torch.from_numpy(instance.node_features).float().requires_grad_(True)
     a = torch.nonzero(adj).int()
-    w = torch.from_numpy(instance.edge_weights).double().requires_grad_(True)
+    w = torch.from_numpy(instance.edge_weights).float().requires_grad_(True)
     label = torch.tensor(label).long()
     return Data(x=x, y=label, edge_index=a.T, edge_attr=w)
   
