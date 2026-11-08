@@ -14,7 +14,7 @@ class RuntimeMetric(EvaluationMetric):
     def evaluate(self, instance_1 , instance_2 , oracle : Oracle=None, explainer : Explainer=None, dataset = None):
         start_time = time.time()
         counterfactual = explainer.explain(instance_1)
-        end_time = time.time() if not hasattr(counterfactual, "time") and counterfactual.time is None else counterfactual.time
+        end_time = time.time() if not hasattr(counterfactual, "time") or counterfactual.time is None else counterfactual.time
         # giving the same id to the counterfactual and the original instance 
         counterfactual.id = instance_1.id       
         
