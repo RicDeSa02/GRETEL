@@ -792,7 +792,7 @@ class XPlore(Explainer):
         # # self.edge_weights_full[self.edge_indices] = self.edge_weights # weights having also 0s for missing edges
         # # self.edge_weights_full = self.edge_weights_full[self.edge_index_full]
 
-        if d := self.__distance(self.data, self.A_v_bar):
+        if d := self.__distance(self.data, self.A_v_bar) and (self.extended or self.self.update_node_feat or self.self.change_node_feat):
             graph = nx.from_numpy_array(self.A_v_bar.clone().detach().cpu().numpy())
             num_nodes = graph.number_of_nodes()
             features_to_stack = []
