@@ -40,41 +40,41 @@ class TreeGrid(Generator):
 
     def generate_dataset(self):
 
-        inst1_id = 0
-        adj, feats = gexf_to_arrays(f"CFs_figs\\TG\\{inst1_id}-original.gexf")
+        # inst1_id = 0
+        # adj, feats = gexf_to_arrays(f"CFs_figs\\TG\\{inst1_id}-original.gexf")
 
-        n_edges = int(np.count_nonzero(adj))
-        edge_weights = adj[adj != 0]
+        # n_edges = int(np.count_nonzero(adj))
+        # edge_weights = adj[adj != 0]
 
-        inst1 = GraphInstance(
-            id=inst1_id,
-            data=adj,
-            node_features=feats,
-            edge_features=None,
-            edge_weights=edge_weights,
-            label=1,   
-        )
+        # inst1 = GraphInstance(
+        #     id=inst1_id,
+        #     data=adj,
+        #     node_features=feats,
+        #     edge_features=None,
+        #     edge_weights=edge_weights,
+        #     label=1,   
+        # )
 
-        self.dataset.instances.append(inst1)
+        # self.dataset.instances.append(inst1)
 
-        inst2_id = 2
-        adj, feats = gexf_to_arrays(f"CFs_figs\\TG\\{inst2_id}-original.gexf")
+        # inst2_id = 2
+        # adj, feats = gexf_to_arrays(f"CFs_figs\\TG\\{inst2_id}-original.gexf")
         
-        n_edges = int(np.count_nonzero(adj))
-        edge_weights = adj[adj != 0]
+        # n_edges = int(np.count_nonzero(adj))
+        # edge_weights = adj[adj != 0]
 
-        inst2 = GraphInstance(
-            id=inst2_id,
-            data=adj,
-            node_features=feats,
-            edge_features=None,
-            edge_weights=edge_weights,
-            label=0,  
-        )
+        # inst2 = GraphInstance(
+        #     id=inst2_id,
+        #     data=adj,
+        #     node_features=feats,
+        #     edge_features=None,
+        #     edge_weights=edge_weights,
+        #     label=0,  
+        # )
 
-        self.dataset.instances.append(inst2)
+        # self.dataset.instances.append(inst2)
 
-        return
+        # return
 
         nodes_count, edges_count = 0, 0
 
