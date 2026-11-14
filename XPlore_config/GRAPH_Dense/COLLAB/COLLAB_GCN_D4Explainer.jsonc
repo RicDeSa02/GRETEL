@@ -60,7 +60,7 @@
                 "task": "gc",
                 "dataset": "COLLAB",
                 "num_layers": 2,
-                "device": "cuda"
+                // "device": "cuda"
             }
         }
     ],

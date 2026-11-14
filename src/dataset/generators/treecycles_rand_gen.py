@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from src.dataset.generators.base import Generator
 from src.dataset.instances.graph import GraphInstance
 
+from src.dataset.utils.gephi_utils import gexf_to_arrays
+
 
 class TreeCyclesRandGen(Generator):
     
@@ -25,6 +27,40 @@ class TreeCyclesRandGen(Generator):
         local_config['parameters']['ratio_nodes_in_cycles'] = local_config['parameters'].get('ratio_nodes_in_cycles', 0.5)
 
     def generate_dataset(self):     
+
+        # adj, feats = gexf_to_arrays("CFs_figs\\TCR\\1-original.gexf")
+
+        # n_edges = int(np.count_nonzero(adj))
+        # edge_weights = adj[adj != 0]
+
+        # inst1 = GraphInstance(
+        #     id=1,
+        #     data=adj,
+        #     node_features=feats,
+        #     edge_features=None,
+        #     edge_weights=edge_weights,
+        #     label=0,   
+        # )
+
+        # self.dataset.instances.append(inst1)
+
+        # adj, feats = gexf_to_arrays(f"CFs_figs\\TCR\\2-original.gexf")
+        
+        # n_edges = int(np.count_nonzero(adj))
+        # edge_weights = adj[adj != 0]
+
+        # inst2 = GraphInstance(
+        #     id=2,
+        #     data=adj,
+        #     node_features=feats,
+        #     edge_features=None,
+        #     edge_weights=edge_weights,
+        #     label=1,  
+        # )
+
+        # self.dataset.instances.append(inst2)
+
+        # return
                   
         nodes_count, edges_count = 0, 0
 

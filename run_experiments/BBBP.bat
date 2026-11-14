@@ -12,3 +12,5 @@ python main.py XPlore_config\GRAPH_Dense\BBBP\BBBP_GCN_RSGG-CE.jsonc
 python main.py XPlore_config\GRAPH_Dense\BBBP\BBBP_GCN_XPlore.jsonc
 python main.py XPlore_config\GRAPH_Dense\BBBP\BBBP_GCN_XPlore+.jsonc
 python main.py XPlore_config\GRAPH_Dense\BBBP\BBBP_GCN_XPlore++.jsonc
+python main.py XPlore_config\GRAPH_Dense\BBBP\BBBP_GCN_XPlore-.jsonc
+python main.py XPlore_config\GRAPH_Dense\BBBP\BBBP_GCN_XPlore--.jsonc

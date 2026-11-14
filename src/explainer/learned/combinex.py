@@ -1,4 +1,4 @@
-import time
+import time, os
 import torch
 import torch.optim as optim
 import numpy as np
@@ -13,6 +13,10 @@ from src.dataset.instances.graph import GraphInstance
 from src.future.explanation.local.graph_counterfactual import LocalGraphCounterfactualExplanation
 from src.dataset.utils.dataset_torch import TorchGeometricDataset
 
+import networkx as nx, matplotlib.pyplot as plt
+import numpy as np
+
+from src.dataset.utils.gephi_utils import nx_to_mol, is_valid_molecule, get_cf_validity, plot_molecule
 
 class COMBINEX(Explainer):
     """
@@ -25,14 +29,14 @@ class COMBINEX(Explainer):
         super().init()
         
         # Set device
-        self.device = (
+        device = (
             "cuda"
             if torch.cuda.is_available()
             else "mps"
             if torch.backends.mps.is_available()
             else "cpu"
         )
-        # self.device = "cpu"
+        self.device = self.oracle.device if hasattr(self.oracle, 'device') else device
         
         # Initialize best loss tracking
         self.best_loss = np.inf
@@ -50,6 +54,9 @@ class COMBINEX(Explainer):
                 torch.cuda.manual_seed_all(seed)
 
         self.visualize = self.local_config['parameters'].get('visualize', False)
+        self.vis_id = self.local_config['parameters'].get('vis_id', -1)
+        self.chem_flag = self.local_config['parameters'].get('chem_flag', False)
+        self.partials = {} # instance id -> closest-to-flip graph (only when no CF found)
     
     def explain(self, instance: GraphInstance):
         """
@@ -61,6 +68,9 @@ class COMBINEX(Explainer):
         Returns:
             LocalGraphCounterfactualExplanation containing the counterfactual instance(s)
         """
+        if self.visualize and instance.id != self.vis_id and self.vis_id != -1:
+            return instance
+        
         # Ensure instance has dataset reference
         if instance._dataset is None:
             instance._dataset = self.dataset
@@ -83,7 +93,9 @@ class COMBINEX(Explainer):
                 
         # Get optimizer
         self.optimizer = self.get_optimizer(self.local_config, self.graph_perturber)
-        
+
+        self.partial_cf = None
+        self.best_margin = np.inf
         best_cf_example = None
         start = time.time()
         
@@ -97,9 +109,100 @@ class COMBINEX(Explainer):
             
             if new_sample is not None:
                 best_cf_example = new_sample
+
+            if best_cf_example is None and self.partial_cf is not None:
+                v, e, margin, ep = self.partial_cf
+                partial = self._data_to_graph_instance(
+                    Data(x=v, edge_index=e, y=torch.tensor([instance.label])), instance)
+                partial.margin, partial.epoch = margin, ep
+                self.partials[instance.id] = partial
+        
+        cf_instance = None
         
         if best_cf_example is not None:
             cf_instance = self._data_to_graph_instance(best_cf_example, instance)
+
+        if best_cf_example is None and self.partial_cf is not None:
+            cf_instance = partial
+
+        if cf_instance and self.visualize:
+            orig_pred = self.oracle.predict(instance)
+            cf_pred = self.oracle.predict(cf_instance)
+            self.oracle._call_counter -= 2
+            print(f"orig_pred: {orig_pred} | cf pred: {cf_pred}")
+
+            pos = nx.spring_layout(nx.from_numpy_array(np.asarray(cf_instance.data))) # Fix graph orientation
+            instance_graph = nx.from_numpy_array(instance.data)
+            CF_graph = nx.from_numpy_array(cf_instance.data)
+            fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+            nx.draw(instance_graph, pos=pos, ax=axes[0], with_labels=True, cmap='cool', node_color=instance.node_features.mean(axis=1), edge_color='gray')
+            axes[0].set_title(f"Initial Graph | Predicted Class: {instance.label}")
+            nx.draw(CF_graph, pos=pos, ax=axes[1], with_labels=True, cmap='cool', node_color=cf_instance.node_features.mean(axis=1), edge_color='gray')
+            axes[1].set_title(f"Counterfactual Graph | Predicted Class: {cf_instance.label}")
+            fig.suptitle(f"True label: {instance.label}")
+            plt.show()
+
+            save = input("save graph? (y/n): ")
+        
+            if save.lower() == "y":
+
+                oracle_name = str(self.oracle.model.__class__).split('.')[-2]
+
+                G = nx.from_numpy_array(cf_instance.data)
+
+                for i, feat in enumerate(cf_instance.node_features):
+                    # print(feat.mean())
+                    G.nodes[i]["Feature"] = feat.mean()
+
+                nx.write_gexf(G, f"CFs_figs\\{self.dataset.name}\\{instance.id}-COMBINEX-{oracle_name}-{"cf" if orig_pred!=cf_pred is not None else "not_cf"}.gexf")
+                input(f"Graph saved to CFs_figs\\{self.dataset.name}\\{instance.id}-COMBINEX-{oracle_name}-{"cf" if orig_pred!=cf_pred is not None else "not_cf"}.gexf")
+
+        if cf_instance and self.chem_flag:
+        
+            # if self.chem_flag: # and self.atom_label is not None:
+            #     if "MUTAG" in self.dataset.name:
+            #         MUTAG_VALENCE = {0: 4, 1: 3, 2: 2, 3: 1, 4: 1, 5: 1, 6: 1}  # C,N,O,F,I,Cl,Br
+            #         self.max_valence = torch.tensor(
+            #             [MUTAG_VALENCE.get(int(t), 4) for t in self.atom_label],
+            #             dtype=torch.float32, device=self.device
+            #         )
+            #     else:
+            #         self.max_valence = None  # skip L_val
+
+            # if self.dataset.name.split('-', 1)[0] in self.CHEMICAL_DATASETS:
+            #     self.atom_label = np.argmax(instance.node_features[:, self.dataset.data.num_node_attributes:instance.node_features.shape[1]-self.num_structural_feat], axis=1).astype(float)  # shape (N,) # NOTE we exclude node attributes/features that are preprended to node labels and structural features that are appended.
+            #     # self.n_atom_types = self.dataset.data.num_node_labels
+
+            manipulators = [type(m).__name__ for m in self.dataset.manipulators]
+            num_structural_feat = 0
+            if 'Causality' in manipulators: num_structural_feat += 1
+            if 'NodeCentrality' in manipulators: num_structural_feat += 7
+            atom_types = np.argmax(instance.node_features[:, :-num_structural_feat], axis=1).astype(float)  # shape (N,)
+
+            print(f"result.label: {cf_instance.label}")
+            chem_valid = get_cf_validity(instance, cf_instance.data, "MUTAG", atom_types)
+            print(f"Chemically valid: {chem_valid}")
+            cf_adj = cf_instance.data
+            G = nx.from_numpy_array(cf_adj)
+            G_original = nx.from_numpy_array(instance.data)
+            if atom_types is not None:
+                for i, atom_idx in enumerate(atom_types):
+                    G.nodes[i]['label'] = int(atom_idx)
+                    G_original.nodes[i]['label'] = int(atom_idx)
+                    
+            mol = nx_to_mol(G, "MUTAG")
+            mol_original = nx_to_mol(G_original, "MUTAG")
+            
+            if chem_valid and mol:
+                oracle_name = str(self.oracle.model.__class__).split('.')[-2]
+                # draw_molecule(mol, "MUTAG", filepath=f"CFs_figs\\{self.dataset.name}\\{instance.id}-{explainer_name}-{oracle_name}.png")
+                os.makedirs(f"CFs_figs\\{self.dataset.name}", exist_ok=True)
+                if input("save molecule and graph? (y/n): ").lower() == "y":
+                    plot_molecule(mol, filepath=f"CFs_figs\\{self.dataset.name}\\{instance.id}-COMBINEX-{oracle_name}-{"cf" if orig_pred!=cf_pred is not None else "not_cf"}.pdf", ref_mol=mol_original)
+                    nx.write_gexf(G, f"CFs_figs\\{self.dataset.name}\\{instance.id}-COMBINEX-{oracle_name}-{"cf" if orig_pred!=cf_pred is not None else "not_cf"}.gexf")
+                    input(f"Graph saved to CFs_figs\\{self.dataset.name}\\{instance.id}-COMBINEX-{oracle_name}-{"cf" if orig_pred!=cf_pred is not None else "not_cf"}.gexf")
+
+        if best_cf_example:
             return cf_instance        
         
         return instance
@@ -141,6 +244,12 @@ class COMBINEX(Explainer):
         
         # Calculate eta: 1 if prediction changed, 0 otherwise
         original_label = torch.tensor([self.oracle.predict(original_instance)], device=self.device, dtype=torch.long)
+        logits = model_out[0].detach()
+        o = original_label.item()
+        margin = (logits[o] - torch.cat([logits[:o], logits[o + 1:]]).max()).item()
+        if margin < self.best_margin:
+            self.best_margin = margin
+            self.partial_cf = (V_pert.detach().clone(), cf_edges.detach().clone(), margin, epoch)
         eta = ((y_pred_new_actual != original_label) | (original_label != y_pred_differentiable)).float()
         
         # Calculate prediction loss

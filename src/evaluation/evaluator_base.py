@@ -136,11 +136,12 @@ class Evaluator(ABC):
                         val, counterfactual = metric.evaluate(inst, None, self._oracle,self._explainer,self._data)
                         self._results[Context.get_fullname(metric)].append({"id":str(inst.id),"value":val})
                         self._explanations.append(counterfactual)
+                        if metric.name == 'Runtime':
+                            time = val
     
             # print(f"counterfactual is: {counterfactual}")
             self._real_evaluate(inst, counterfactual,self._oracle,self._explainer,self._data)
-            self._logger.info('evaluated instance with id %s', str(inst.id))
-
+            self._logger.info(f'evaluated instance with id %s - runtime: {f"{time:.3f}" if "time" in locals() else "N/A"} s', str(inst.id))
         self._logger.info(self._results)
     
         self.write_results(fold_id)

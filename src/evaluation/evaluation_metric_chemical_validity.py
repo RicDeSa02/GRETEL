@@ -37,6 +37,7 @@ class ChemicalValidityMetric(EvaluationMetric):
             instance_2 (GraphInstance):
                 Counterfactual instance.
         """
+        # print(f"Chemical validity: {float(self._is_valid(instance_2.data, instance_2, instance_1, dataset))}")
         return float(self._is_valid(instance_2.data, instance_2, instance_1, dataset))
 
 

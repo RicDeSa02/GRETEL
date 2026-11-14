@@ -627,7 +627,8 @@ class DiffExplainer(ExplainerD4, Trainable, Explainer):
         self.local_config['parameters']['residual'] = self.local_config['parameters'].get('residual', False)
         self.local_config['parameters']['noise_mlp'] = self.local_config['parameters'].get('noise_mlp', True)
         self.local_config['parameters']['simplified'] = self.local_config['parameters'].get('simplified', False)
-        self.local_config['parameters']['device'] = self.local_config['parameters'].get('device', 'cuda' if torch.cuda.is_available() else 'cpu')
+        # self.local_config['parameters']['device'] = self.local_config['parameters'].get('device', 'cuda' if torch.cuda.is_available() else 'cpu')
+        self.local_config['parameters']['device'] = self.local_config['parameters'].get('device', self.oracle.device)
         self.local_config['parameters']['n_nodes'] = self.local_config['parameters'].get('n_nodes', np.max(self.dataset.num_nodes_values))
         self.local_config['parameters']['noise_list'] = self.local_config['parameters'].get('noise_list', None)
     

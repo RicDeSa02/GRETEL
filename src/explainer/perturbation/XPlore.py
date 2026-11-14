@@ -28,7 +28,7 @@ class XPlore(Explainer):
     #region init
     def init(self):
         """
-        α: Learning Rate, K: Number of iterations, β: Loss controll (Ldist wrt Lpred) (Eq.1 [4]), γ_edges: Missing edges addition fraction (per edge)
+        α: Learning Rate, K: Number of iterations, β: Loss controll (Ldist wrt Lpred) (Eq.1 [4])
         α: 0.1, K: 500, β: 0.5 // Paper best parameters (Hyperparameter Search [6.4])
         """
         # input("Training Complete")
@@ -41,7 +41,7 @@ class XPlore(Explainer):
         self.K = local_params['K'] # K: Number of Iterations (to update pertubation matrices (P_hat, etc.))
         self.β = local_params['beta'] # β: Trade-off between Lpred and Ldist Eq.1 [4]
         self.extended = local_params['extended'] # Use extended version of the algorithm (allowing to add edges and not only to drop them)
-        self.γ_edges = local_params['gamma_edge'] # γ: Add missing edges to the edge perturbation matrix (γ ∈ [0, 1])
+        # self.γ_edges = local_params['gamma_edge'] # γ: Add missing edges to the edge perturbation matrix (γ ∈ [0, 1])
         self.update_node_feat = local_params['update_node_feat'] # Allow to update node features (gate or change them freely)
         self.change_node_feat = local_params['change_node_feat'] # Allow node features to change freely instead of just keep or discard a given feature (gating)
         self.change_all_feat = local_params['change_all_feat'] # Allow all features to change freely (node, edge, graph features)
@@ -78,7 +78,7 @@ class XPlore(Explainer):
         assert ((isinstance(self.α, float) or isinstance(self.α, int)) and self.α >= 0 or True)
         assert ((isinstance(self.β, float) or isinstance(self.β, int)) and self.β >= 0 or True)
         assert (isinstance(self.extended, bool))
-        assert ((isinstance(self.γ_edges, float) or isinstance(self.γ_edges, int)) and 0 <= self.γ_edges <= 1)
+        # assert ((isinstance(self.γ_edges, float) or isinstance(self.γ_edges, int)) and 0 <= self.γ_edges <= 1)
         assert (isinstance(self.update_node_feat, bool))
         assert (isinstance(self.change_node_feat, bool))
         # assert ((isinstance(self.γ_node_feat, float) or isinstance(self.γ_node_feat, int)) and 0 <= self.γ_node_feat <= 1)
@@ -115,8 +115,8 @@ class XPlore(Explainer):
         if 'extended' not in local_config['parameters']:
             local_config['parameters']['extended'] = True
             
-        if 'gamma_edge' not in local_config['parameters']:
-            local_config['parameters']['gamma_edge'] = 0
+        # if 'gamma_edge' not in local_config['parameters']:
+            # local_config['parameters']['gamma_edge'] = 0
 
         if 'update_node_feat' not in local_config['parameters']:
             local_config['parameters']['update_node_feat'] = True    
@@ -125,7 +125,7 @@ class XPlore(Explainer):
             local_config['parameters']['change_node_feat'] = True
 
         if 'change_all_feat' not in local_config['parameters']:
-            local_config['parameters']['change_all_feat'] = True
+            local_config['parameters']['change_all_feat'] = False
             
         # if 'gamma_node_feat' not in local_config['parameters']:
         #     local_config['parameters']['gamma_node_feat'] = 0
@@ -567,7 +567,7 @@ class XPlore(Explainer):
             for i, feat in enumerate(instance.node_features):
                 G.nodes[i]["Feature"] = feat.mean()
 
-            nx.write_gexf(G, f"CFs_figs\\{instance.id}-original.gexf")
+            nx.write_gexf(G, f"CFs_figs\\{self.dataset.name}\\{instance.id}-original.gexf")
 
             G = nx.from_numpy_array(edge_weights_full.reshape(instance.data.shape))
             print(edge_weights_full.reshape(instance.data.shape).shape)
@@ -575,8 +575,8 @@ class XPlore(Explainer):
             for i, feat in enumerate(self.N_v_bar.clone().detach().cpu().numpy()):
                 G.nodes[i]["Feature"] = feat.mean()
 
-            nx.write_gexf(G, f"CFs_figs\\{instance.id}-{explainer_name}-{oracle_name}.gexf")
-            input(f"Graph saved to CFs_figs\\{instance.id}-{explainer_name}-{oracle_name}.gexf")
+            nx.write_gexf(G, f"CFs_figs\\{self.dataset.name}\\{instance.id}-{explainer_name}-{oracle_name}.gexf")
+            input(f"Graph saved to CFs_figs\\{self.dataset.name}\\{instance.id}-{explainer_name}-{oracle_name}.gexf")
 
         if not self.opt_flag:
             if not self.node_classification: print(f"{Color.RED}CF not found{Color.RESET}, original: {Color.MAGENTA}{self.f_v}{Color.RESET}")
@@ -724,7 +724,7 @@ class XPlore(Explainer):
                     explainer_name = "CFGNNE" if not self.extended else "XPlore"
                     # draw_molecule(mol, "MUTAG", filepath=f"CFs_figs\\{self.dataset.name}\\{instance.id}-{explainer_name}-{oracle_name}.png")
                     os.makedirs(f"CFs_figs\\{self.dataset.name}", exist_ok=True)
-                    if input("save graph? (y/n): ").lower() == "y":
+                    if input("save molecule and graph? (y/n): ").lower() == "y":
                         plot_molecule(mol, filepath=f"CFs_figs\\{self.dataset.name}\\{instance.id}-{explainer_name}-{oracle_name}.pdf", ref_mol=mol_original)
                         nx.write_gexf(G, f"CFs_figs\\{self.dataset.name}\\{instance.id}-{explainer_name}-{oracle_name}.gexf")
                         
@@ -793,7 +793,7 @@ class XPlore(Explainer):
         # # self.edge_weights_full = self.edge_weights_full[self.edge_index_full]
 
         if d := self.__distance(self.data, self.A_v_bar):
-            graph = nx.from_numpy_array(P.clone().detach().cpu().numpy())
+            graph = nx.from_numpy_array(self.A_v_bar.clone().detach().cpu().numpy())
             num_nodes = graph.number_of_nodes()
             features_to_stack = []
 

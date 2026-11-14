@@ -126,11 +126,10 @@ class CLEARExplainer(Trainable, Explainer):
                                         data=adj_reconst_binary.to("cpu").detach().numpy(),
                                         node_features=features_reconst.squeeze().to("cpu").detach().numpy())
             
-            orig_pred = self.oracle.predict(original_instance)
-            cf_pred = self.oracle.predict(cf_instance)
-            
-            
             if cf_instance and self.visualize:
+                orig_pred = self.oracle.predict(original_instance)
+                cf_pred = self.oracle.predict(cf_instance)
+                
                 pos = nx.spring_layout(nx.from_numpy_array(cf_instance.data)) # Fix graph orientation
                 instance_graph = nx.from_numpy_array(original_instance.data)
                 CF_graph = nx.from_numpy_array(cf_instance.data)

@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from src.dataset.generators.base import Generator
 from src.dataset.instances.graph import GraphInstance
 
+from src.dataset.utils.gephi_utils import gexf_to_arrays
+
 class BAShapes(Generator):
     
     def init(self):
@@ -64,6 +66,42 @@ class BAShapes(Generator):
             # nx.set_node_attributes(house, features, "feat")
             return square
 
+        # inst1_id = 2
+        # adj, feats = gexf_to_arrays(f"CFs_figs\\BAS\\{inst1_id}-original.gexf")
+
+        # n_edges = int(np.count_nonzero(adj))
+        # edge_weights = adj[adj != 0]
+
+        # inst1 = GraphInstance(
+        #     id=inst1_id,
+        #     data=adj,
+        #     node_features=feats,
+        #     edge_features=None,
+        #     edge_weights=edge_weights,
+        #     label=0,   
+        # )
+
+        # self.dataset.instances.append(inst1)
+
+        # inst2_id = 3
+        # adj, feats = gexf_to_arrays(f"CFs_figs\\BAS\\{inst2_id}-original.gexf")
+        
+        # n_edges = int(np.count_nonzero(adj))
+        # edge_weights = adj[adj != 0]
+
+        # inst2 = GraphInstance(
+        #     id=inst2_id,
+        #     data=adj,
+        #     node_features=feats,
+        #     edge_features=None,
+        #     edge_weights=edge_weights,
+        #     label=1,  
+        # )
+
+        # self.dataset.instances.append(inst2)
+
+        # return
+        
         nodes_count, edges_count = 0, 0
 
         for i in range(self.num_instances):

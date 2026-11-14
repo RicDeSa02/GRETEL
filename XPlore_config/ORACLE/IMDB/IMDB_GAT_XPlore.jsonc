@@ -61,7 +61,7 @@
         "update_node_feat": false,
         "change_node_feat": false, 
         "gamma_node_feat": 0,
-        "decay_alpha": true,
+        "boost_alpha": true,
         "debugging": false,
         "visualize": true}}],
     "compose_mes" : "config/snippets/metrics_fully_connected.json",

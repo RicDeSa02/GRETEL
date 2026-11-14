@@ -12,3 +12,5 @@ python main.py XPlore_config\GRAPH_Dense\COLORS-3\COLORS-3_GCN_RSGG-CE.jsonc
 python main.py XPlore_config\GRAPH_Dense\COLORS-3\COLORS-3_GCN_XPlore.jsonc
 python main.py XPlore_config\GRAPH_Dense\COLORS-3\COLORS-3_GCN_XPlore+.jsonc
 python main.py XPlore_config\GRAPH_Dense\COLORS-3\COLORS-3_GCN_XPlore++.jsonc
+@REM  python main.py XPlore_config\GRAPH_Dense\COLORS-3\COLORS-3_GCN_XPlore-.jsonc
+@REM  python main.py XPlore_config\GRAPH_Dense\COLORS-3\COLORS-3_GCN_XPlore--.jsonc

@@ -1,6 +1,6 @@
 {  
     "experiment": {
-        "scope": "GRAPH/MSRC/CF2",
+        "scope": "GRAPH/MSRC/C2Explainer",
         "parameters": {
             "lock_release_tout":120,
             "propagate":[

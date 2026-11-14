@@ -12,3 +12,5 @@ python main.py XPlore_config\GRAPH_Dense\PROTEINS_full\PROTEINS_full_GCN_RSGG-CE
 python main.py XPlore_config\GRAPH_Dense\PROTEINS_full\PROTEINS_full_GCN_XPlore.jsonc
 python main.py XPlore_config\GRAPH_Dense\PROTEINS_full\PROTEINS_full_GCN_XPlore+.jsonc
 python main.py XPlore_config\GRAPH_Dense\PROTEINS_full\PROTEINS_full_GCN_XPlore++.jsonc
+python main.py XPlore_config\GRAPH_Dense\PROTEINS_full\PROTEINS_full_GCN_XPlore-.jsonc
+python main.py XPlore_config\GRAPH_Dense\PROTEINS_full\PROTEINS_full_GCN_XPlore--.jsonc

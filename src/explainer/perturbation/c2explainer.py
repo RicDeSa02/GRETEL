@@ -1,4 +1,4 @@
-import copy
+import copy, os
 
 import torch
 import torch.nn.functional as F
@@ -11,6 +11,8 @@ from src.core.trainable_base import Trainable
 
 import networkx as nx, matplotlib.pyplot as plt
 import numpy as np
+
+from src.dataset.utils.gephi_utils import nx_to_mol, is_valid_molecule, get_cf_validity, plot_molecule
 
 class C2Explainer(Explainer):
     r"""
@@ -52,6 +54,8 @@ class C2Explainer(Explainer):
         p['beta'] = p.get('beta', 1)
         p['gamma'] = p.get('gamma', 0.1)
         p['visualize'] = p.get('visualize', False)
+        p['vis_id'] = p.get('vis_id', -1)
+        p['chem_flag'] = p.get('chem_flag', False)
 
     def init(self):
         p = self.local_config['parameters']
@@ -70,6 +74,8 @@ class C2Explainer(Explainer):
         self.coeffs['beta'] = p['beta']
         self.coeffs['gamma'] = p['gamma']
         self.visualize = p['visualize']
+        self.vis_id = p.get('vis_id', -1)
+        self.chem_flag = p.get('chem_flag', False)
 
         self._desired = None
         self.pred_same = None
@@ -88,6 +94,8 @@ class C2Explainer(Explainer):
         return True
 
     def explain(self, instance):
+        if self.visualize and instance.id != self.vis_id and self.vis_id != -1:
+            return instance
         model = self.oracle.model # adapt if your oracle wraps the torch module differently
         device = next(model.parameters()).device
         x, edge_index = self._instance_to_tensors(instance, device)
@@ -116,8 +124,13 @@ class C2Explainer(Explainer):
         elif best_cf is None:
             return copy.deepcopy(instance)   # GRETEL convention: no CF found -> original instance
         
+        
         if cf_instance and self.visualize:
-            pos = nx.spring_layout(nx.from_numpy_array(np.asarray(cf_instance.data))) # Fix graph orientation
+            orig_pred = self.oracle.predict(instance)
+            cf_pred = self.oracle.predict(cf_instance)
+            self.oracle._call_counter -= 2
+        
+            pos = nx.spring_layout(nx.from_numpy_array(np.asarray(cf_instance.data)), seed=0) # Fix graph orientation
             instance_graph = nx.from_numpy_array(instance.data)
             CF_graph = nx.from_numpy_array(cf_instance.data)
             fig, axes = plt.subplots(1, 2, figsize=(12, 6))
@@ -140,8 +153,55 @@ class C2Explainer(Explainer):
                     # print(feat.mean())
                     G.nodes[i]["Feature"] = feat.mean()
 
-                nx.write_gexf(G, f"CFs_figs\\{instance.id}-C2Explainer-{oracle_name}.gexf")
-                input(f"Graph saved to CFs_figs\\{instance.id}-C2Explainer-{oracle_name}.gexf")          
+                savedir =  f"CFs_figs\\{self.dataset.name}"
+                os.makedirs(savedir, exist_ok=True)
+                nx.write_gexf(G, f"{savedir}\\{instance.id}-C2Explainer-{oracle_name}-{'cf' if orig_pred!=cf_pred is not None else 'not_cf'}.gexf")
+                input(f"Graph saved to CFs_figs\\{self.dataset.name}\\{instance.id}-C2Explainer-{oracle_name}-{'cf' if orig_pred!=cf_pred is not None else 'not_cf'}.gexf")
+
+            if cf_instance and self.chem_flag:
+
+                # if self.chem_flag: # and self.atom_label is not None:
+                #     if "MUTAG" in self.dataset.name:
+                #         MUTAG_VALENCE = {0: 4, 1: 3, 2: 2, 3: 1, 4: 1, 5: 1, 6: 1}  # C,N,O,F,I,Cl,Br
+                #         self.max_valence = torch.tensor(
+                #             [MUTAG_VALENCE.get(int(t), 4) for t in self.atom_label],
+                #             dtype=torch.float32, device=self.device
+                #         )
+                #     else:
+                #         self.max_valence = None  # skip L_val
+
+                # if self.dataset.name.split('-', 1)[0] in self.CHEMICAL_DATASETS:
+                #     self.atom_label = np.argmax(instance.node_features[:, self.dataset.data.num_node_attributes:instance.node_features.shape[1]-self.num_structural_feat], axis=1).astype(float)  # shape (N,) # NOTE we exclude node attributes/features that are preprended to node labels and structural features that are appended.
+                #     # self.n_atom_types = self.dataset.data.num_node_labels
+
+                manipulators = [type(m).__name__ for m in self.dataset.manipulators]
+                num_structural_feat = 0
+                if 'Causality' in manipulators: num_structural_feat += 1
+                if 'NodeCentrality' in manipulators: num_structural_feat += 7
+                atom_types = np.argmax(instance.node_features[:, :-num_structural_feat], axis=1).astype(float)  # shape (N,)
+
+                print(f"result.label: {cf_instance.label}")
+                chem_valid = get_cf_validity(instance, cf_instance.data, "MUTAG", atom_types)
+                print(f"Chemically valid: {chem_valid}")
+                cf_adj = cf_instance.data
+                G = nx.from_numpy_array(cf_adj)
+                G_original = nx.from_numpy_array(instance.data)
+                if atom_types is not None:
+                    for i, atom_idx in enumerate(atom_types):
+                        G.nodes[i]['label'] = int(atom_idx)
+                        G_original.nodes[i]['label'] = int(atom_idx)
+                        
+                mol = nx_to_mol(G, "MUTAG")
+                mol_original = nx_to_mol(G_original, "MUTAG")
+                
+                if chem_valid and mol:
+                    oracle_name = str(self.oracle.model.__class__).split('.')[-2]
+                    # draw_molecule(mol, "MUTAG", filepath=f"CFs_figs\\{self.dataset.name}\\{instance.id}-{explainer_name}-{oracle_name}.png")
+                    os.makedirs(f"CFs_figs\\{self.dataset.name}", exist_ok=True)
+                    if input("save molecule and graph? (y/n): ").lower() == "y":
+                        plot_molecule(mol, filepath=f"CFs_figs\\{self.dataset.name}\\{instance.id}-C2Explainer-{oracle_name}-{"cf" if orig_pred!=cf_pred is not None else "not_cf"}.pdf", ref_mol=mol_original)
+                        nx.write_gexf(G, f"CFs_figs\\{self.dataset.name}\\{instance.id}-C2Explainer-{oracle_name}-{"cf" if orig_pred!=cf_pred is not None else "not_cf"}.gexf")
+                        input(f"Graph saved to CFs_figs\\{self.dataset.name}\\{instance.id}-C2Explainer-{oracle_name}-{"cf" if orig_pred!=cf_pred is not None else "not_cf"}.gexf")
                 
         return cf_instance
 

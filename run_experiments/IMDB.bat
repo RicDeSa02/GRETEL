@@ -12,3 +12,5 @@ python main.py XPlore_config\GRAPH_Dense\IMDB-BINARY\IMDB-BINARY_GCN_RSGG-CE.jso
 python main.py XPlore_config\GRAPH_Dense\IMDB-BINARY\IMDB-BINARY_GCN_XPlore.jsonc
 python main.py XPlore_config\GRAPH_Dense\IMDB-BINARY\IMDB-BINARY_GCN_XPlore+.jsonc
 python main.py XPlore_config\GRAPH_Dense\IMDB-BINARY\IMDB-BINARY_GCN_XPlore++.jsonc
+python main.py XPlore_config\GRAPH_Dense\IMDB-BINARY\IMDB-BINARY_GCN_XPlore-.jsonc
+python main.py XPlore_config\GRAPH_Dense\IMDB-BINARY\IMDB-BINARY_GCN_XPlore--.jsonc

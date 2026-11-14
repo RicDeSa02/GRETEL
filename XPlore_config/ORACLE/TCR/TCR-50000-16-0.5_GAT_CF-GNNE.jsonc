@@ -1,6 +1,6 @@
 {  
     "experiment" : {
-        "scope": "ORACLE/TCR/GAT/CGGNNE",
+        "scope": "ORACLE/TCR/GAT/CFGNNE",
         "parameters" : {
             "lock_release_tout":120,
             "propagate":[

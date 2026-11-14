@@ -128,10 +128,11 @@ class CF2Explainer(Trainable, Explainer):
             # avoid the old nx representation
             cf_instance._nx_repr = None
 
-            orig_pred = self.oracle.predict(instance)
-            cf_pred = self.oracle.predict(cf_instance)
-
             if cf_instance and self.visualize:
+                orig_pred = self.oracle.predict(instance)
+                cf_pred = self.oracle.predict(cf_instance)
+                self.oracle._call_counter -= 2
+
                 pos = nx.spring_layout(nx.from_numpy_array(instance.data)) # Fix graph orientation
                 instance_graph = nx.from_numpy_array(instance.data)
                 CF_graph = nx.from_numpy_array(cf_instance.data)
@@ -155,8 +156,8 @@ class CF2Explainer(Trainable, Explainer):
                         # print(feat.mean())
                         G.nodes[i]["Feature"] = feat.mean()
 
-                    nx.write_gexf(G, f"CFs_figs\\{instance.id}-CF2-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
-                    input(f"Graph saved to CFs_figs\\{instance.id}-CF2-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
+                    nx.write_gexf(G, f"CFs_figs\\{self.dataset.name}\\{instance.id}-CF2-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
+                    input(f"Graph saved to CFs_figs\\{self.dataset.name}\\{instance.id}-CF2-{oracle_name}-{"cf" if orig_pred!=cf_pred else "not_cf"}.gexf")
 
             if cf_instance and self.chem_flag:
                 ATOM_MAPS = {
@@ -191,7 +192,7 @@ class CF2Explainer(Trainable, Explainer):
                 def is_valid_molecule(G: nx.Graph, dataset_name: str, **kwargs) -> bool:
                     return nx_to_mol(G, dataset_name, **kwargs) is not None
 
-                def get_cf_validity(instance, cf_adj: np.ndarray, dataset_name: str) -> bool:
+                def get_cf_validity(instance:GraphInstance, cf_adj: np.ndarray, dataset_name: str) -> bool:
                     """
                     Check if a CF adjacency matrix corresponds to a valid molecule.
                     Requires instance.atom_types to be set (from TUDataset populate()).

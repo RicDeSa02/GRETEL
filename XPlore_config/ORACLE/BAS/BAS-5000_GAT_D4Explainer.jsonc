@@ -23,7 +23,7 @@
         "oracle": {
             "class": "src.oracle.nn.torch_full.OracleTorch",
             "parameters": {
-                "epochs": 100,
+                "epochs": 10,
                 "batch_size": 512,
                 "early_stopping_threshold":1e-3,
                 "device": "cpu", // gpu is used if availbale
@@ -57,7 +57,7 @@
             }
         }
     ],
-    "compose_mes" : "config/snippets/default_metrics.json",
+    "compose_mes" : "config/snippets/metrics_fully_connected.json",
     "compose_strs" : "config/snippets/default_store_paths.json",
     "embedders": [
       // {"class": "src.embedder.karateclub.FeatherGraph.FeatherGraphEmbedder", "parameters":{        }},
