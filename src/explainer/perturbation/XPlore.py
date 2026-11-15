@@ -32,7 +32,7 @@ class XPlore(Explainer):
         α: 0.1, K: 500, β: 0.5 // Paper best parameters (Hyperparameter Search [6.4])
         """
         # input("Training Complete")
-        self.oracle = retake_oracle(self.local_config)
+        # self.oracle = retake_oracle(self.local_config)
         self.manipulators = [type(m).__name__ for m in self.dataset.manipulators]
         self.CHEMICAL_DATASETS = {"MUTAG", "Mutagenicity", "AIDS", "BZR", "COX2", "DHFR", "PTC_MR", "PTC_FM", "PTC_FR", "PTC_MM", "NCI1", "NCI109"}
         
@@ -59,6 +59,7 @@ class XPlore(Explainer):
 
         self.best_cf_iteration = self.K
         self.best_cf_time = None
+        self.oracle_calls_at_best = self.oracle._call_counter
 
         # Node Features stats for normalization
         X = torch.cat([torch.as_tensor(g.node_features) for g in self.dataset.instances])     # [N*total_nodes, F]
@@ -352,6 +353,7 @@ class XPlore(Explainer):
             # self.n_atom_types = self.dataset.data.num_node_labels
 
         for k in (pbar:=tqdm(range(int(self.K)), disable=not (self.visualize or self.debugging))): #XXX
+            # print(f"self.oracle._call_counter: {self.oracle._call_counter}")
             # pbar.set_description(f"self.alpha: {self.α}")
             if self.debugging: print(f"Iteration: {self.k}")
             self.k = k
@@ -533,12 +535,13 @@ class XPlore(Explainer):
             iteration = self.best_cf_iteration,
             time = self.best_cf_time
             )
+        self.oracle._call_counter = self.oracle_calls_at_best if self.oracle_calls_at_best else self.oracle._call_counter
         
         # from src.evaluation.evaluation_metric_correctness_full import CorrectnessFullMetric
         # CorrectnessFullMetric.evaluate(v_bar_opt_GI)
         # input()
 
-        if self.debugging: print(f"{Color.MAGENTA}Opt predicted class: {Color.RESET}{self.oracle.predict(v_bar_opt_GI)}")
+        if self.debugging: print(f"{Color.MAGENTA}Opt predicted class: {Color.RESET}{self.oracle.predict(v_bar_opt_GI)}"); self.oracle._call_counter -= 1
         if self.visualize and not self.opt_flag: # and self.opt_flag:
             instance_graph = nx.from_numpy_array(instance.data)
             CF_graph = nx.from_numpy_array(self.A_v_bar.clone().detach().cpu().numpy())
@@ -552,7 +555,7 @@ class XPlore(Explainer):
             fig.suptitle(f"True label: {instance.label}")
             plt.show()           
 
-        if self.debugging: print(f"{Color.GREEN}{self.f_v}{Color.RESET} | {Color.MAGENTA}{self.oracle.predict(instance)}{Color.RESET} | {Color.YELLOW}{self.oracle.predict(v_bar_opt_GI)}{Color.RESET} | {self.g_v_bar_pred}")
+        if self.debugging: print(f"{Color.GREEN}{self.f_v}{Color.RESET} | {Color.MAGENTA}{self.oracle.predict(instance)}{Color.RESET} | {Color.YELLOW}{self.oracle.predict(v_bar_opt_GI)}{Color.RESET} | {self.g_v_bar_pred}"); self.oracle._call_counter -= 1
 
         # if self.visualize:
         #     save = input("save graph? (y/n): ").lower()
@@ -792,7 +795,7 @@ class XPlore(Explainer):
         # # self.edge_weights_full[self.edge_indices] = self.edge_weights # weights having also 0s for missing edges
         # # self.edge_weights_full = self.edge_weights_full[self.edge_index_full]
 
-        if d := self.__distance(self.data, self.A_v_bar) and (self.extended or self.self.update_node_feat or self.self.change_node_feat):
+        if d := self.__distance(self.data, self.A_v_bar) and (self.extended or self.update_node_feat or self.self.change_node_feat):
             graph = nx.from_numpy_array(self.A_v_bar.clone().detach().cpu().numpy())
             num_nodes = graph.number_of_nodes()
             features_to_stack = []
@@ -927,6 +930,7 @@ class XPlore(Explainer):
                     self.new_CF = True
                     self.best_cf_iteration = self.k
                     self.best_cf_time = time.time()
+                    self.oracle_calls_at_best = self.oracle._call_counter
 
                 # Check for 'closer' CF, i.e. CF that requires less perturbations
                 elif self.__distance(self.v[0], v_bar[0]) < self.__distance(self.v[0], self.v_bar_opt[0]): # [line 8]: else if d(v, v_bar) ≤ d(v, v_bar*) then
@@ -938,6 +942,7 @@ class XPlore(Explainer):
                     self.new_CF = True
                     self.best_cf_iteration = self.k
                     self.best_cf_time = time.time()
+                    self.oracle_calls_at_best = self.oracle._call_counter
 
         return
 
